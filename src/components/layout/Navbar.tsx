@@ -23,7 +23,7 @@ export function Navbar() {
       .then(r => r.ok ? r.json() : null)
       .then(setSession)
       .catch(() => setSession(null))
-  }, [pathname])
+  }, [])
 
   const isActive = (href: string) => {
     if (href === '/') return pathname === '/' || pathname.startsWith('/subjects')
