@@ -11,7 +11,10 @@ export const metadata: Metadata = {
   title: 'MedCapsula — Tibbiy O\'quv Platformasi',
   description: 'Tibbiyot fanlarini interaktiv 3 bosqichli tizimda o\'rganing: Video, Konspekt, Test.',
   icons: {
-    icon: '/favicon.svg',
+    icon: [
+      { url: '/favicon.ico', sizes: '32x32' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
   },
 }
 
