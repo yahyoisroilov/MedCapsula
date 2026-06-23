@@ -47,12 +47,12 @@ export function Navbar() {
   }, [])
 
   const isActive = (href: string) => {
-    if (href === '/') return pathname === '/' || pathname.startsWith('/subjects')
+    if (href === '/') return pathname === '/'
     return pathname === href || pathname.startsWith(href + '/')
   }
 
   const tabs = [
-    { id: 'fanlar', href: '/', label: 'Fanlar', icon: 'fa-graduation-cap' },
+    { id: 'fanlar', href: '/subjects', label: 'Fanlar', icon: 'fa-graduation-cap' },
     { id: 'qaydlar', href: '/notes', label: 'Qaydlar', icon: 'fa-note-sticky' },
   ]
 
