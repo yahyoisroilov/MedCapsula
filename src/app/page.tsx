@@ -60,7 +60,7 @@ export default async function LandingPage() {
         <div className="max-w-6xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-4 py-1.5 rounded-full mb-6">
             <i className="fa-solid fa-graduation-cap"></i>
-            <span>2 nafar tibbiyot talabasi tomonidan yaratilgan</span>
+            <span>O'zbek tibbiyot talabalari uchun</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-[1.1] tracking-tight max-w-3xl mx-auto text-balance">
@@ -71,22 +71,21 @@ export default async function LandingPage() {
           </h1>
 
           <p className="mt-5 text-base sm:text-lg text-gray-500 dark:text-gray-400 max-w-lg mx-auto leading-relaxed">
-            Video, konspekt va test — har bir mavzu shu 3 bosqichdan iborat.
-            Talabalar uchun, talabalar tomonidan tayyorlangan.
+            Yuzlab sahifa o&apos;rniga — 3 qadam. Boshqa tibbiyot talabalari bilan birga o&apos;rganilgan usul.
           </p>
 
           <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
             <Link
-              href="/subjects"
+              href="/auth/register"
               className="accent-bg rounded-xl px-6 py-3 text-sm font-bold shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition"
             >
-              <i className="fa-solid fa-play mr-1.5"></i> Boshlash
+              Bepul boshlash <i className="fa-solid fa-arrow-right ml-1.5"></i>
             </Link>
             <Link
-              href="/auth/register"
+              href="/subjects"
               className="glass rounded-xl px-6 py-3 text-sm font-bold text-gray-700 dark:text-gray-200 hover:border-emerald-500/40 transition"
             >
-              Bepul ro&apos;yxatdan o&apos;tish
+              Fanlarni ko&apos;rish
             </Link>
           </div>
 
@@ -123,7 +122,7 @@ export default async function LandingPage() {
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">Qanday ishlaydi?</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto">
-              Har bir mavzu 3 bosqichdan iborat bo&apos;lib, bilimlarni mustahkam o&apos;zlashtirishga yordam beradi.
+              Har bir mavzu bir xil tuzilishga ega — va bu tasodif emas. 3 bosqich bilimni mustahkam yodda qoldirish uchun mo&apos;ljallangan.
             </p>
           </div>
 
@@ -132,8 +131,8 @@ export default async function LandingPage() {
               {
                 step: '01',
                 icon: 'fa-play',
-                title: 'Video',
-                desc: 'Har bir mavzu bo\'yicha maxsus tayyorlangan qisqa va tushunarli videodarslarni tomosha qiling.',
+                title: 'Videodars',
+                desc: 'Mavzuni video orqali birinchi marta tushuning. Qisqa, aniq va diqqatni chalg\'itmasdan.',
                 gradient: 'from-cyan-400/20 to-cyan-500/5',
                 border: 'border-cyan-400/20',
                 iconBg: 'bg-cyan-500/10 text-cyan-400',
@@ -142,7 +141,7 @@ export default async function LandingPage() {
                 step: '02',
                 icon: 'fa-book-open',
                 title: 'Konspekt',
-                desc: 'Videodarsning asosiy nuqtalarini o\'z ichiga olgan batafsil konspektlarni o\'qing va esda qoldiring.',
+                desc: 'Videodarsning asosiy nuqtalarini konspektdan o\'qing. Istalgan vaqt qaytib murojaat qilish uchun qulay.',
                 gradient: 'from-emerald-400/20 to-emerald-500/5',
                 border: 'border-emerald-400/20',
                 iconBg: 'bg-emerald-500/10 text-emerald-400',
@@ -151,7 +150,7 @@ export default async function LandingPage() {
                 step: '03',
                 icon: 'fa-list-check',
                 title: 'Test',
-                desc: 'O\'z bilimingizni interaktiv testlar orqali sinab ko\'ring va natijalarni kuzatib boring.',
+                desc: 'Interaktiv testlar bilan bilimingizni sinab ko\'ring. Natijalaringizni kuzatib, zaif tomonlarni aniqlang.',
                 gradient: 'from-teal-400/20 to-teal-500/5',
                 border: 'border-teal-400/20',
                 iconBg: 'bg-teal-500/10 text-teal-400',
@@ -186,18 +185,18 @@ export default async function LandingPage() {
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">Nega aynan MedCapsula?</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto">
-              Tibbiyot talabalari uchun eng qulay va samarali o&apos;quv platformasi.
+              Tibbiyot talabasiga nima kerakligini biz bilamiz — chunki biz ham tibbiyot talabasimiz.
             </p>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: 'fa-mobile-screen', title: 'Mobil qulay', desc: 'Telefon, planshet va kompyuterda birdek yaxshi ishlaydi.' },
-              { icon: 'fa-chart-line', title: 'Progress kuzatuvi', desc: 'Har bir mavzudagi yutuqlaringizni ko\'rib boring.' },
-              { icon: 'fa-clock', title: 'Vaqtingizni tejang', desc: 'Qisqa va lo\'nda videolar, keraksiz ma\'lumotlarsiz.' },
-              { icon: 'fa-brain', title: 'Samarali o\'qish', desc: 'Video + matn + test — 3 xil format mustahkam yodda qolishni ta\'minlaydi.' },
-              { icon: 'fa-pen-to-square', title: 'Interaktiv testlar', desc: 'Har bir mavzu yakunida o\'z bilimingizni sinab ko\'ring.' },
-              { icon: 'fa-heart', title: 'Talabalar uchun', desc: 'Platforma tibbiyot talabalari tomonidan, talabalar ehtiyojiga qarab yaratilgan.' },
+              { icon: 'fa-mobile-screen', title: 'Har qayerdan kirish', desc: 'Telefon, planshet yoki kompyuterdan bemalol foydalaning.' },
+              { icon: 'fa-chart-line', title: 'Progress kuzatuvi', desc: 'Qaysi mavzuni o\'tganingiz va nima qolganini doim ko\'rasiz.' },
+              { icon: 'fa-clock', title: 'Vaqtni tejang', desc: 'Faqat kerakli bilim. Uzun tushuntirishlar va bo\'sh gaplarsiz.' },
+              { icon: 'fa-brain', title: '3 xil format', desc: 'Video + konspekt + test — bilim mustahkam yodda qoladi.' },
+              { icon: 'fa-pen-to-square', title: 'Interaktiv testlar', desc: 'Har bir mavzu yakunida o\'z darajangizni aniqlang.' },
+              { icon: 'fa-heart', title: 'Talabalar uchun', desc: 'Real ehtiyojlar asosida, tibbiyot talabalari tomonidan yaratilgan.' },
             ].map((f, i) => (
               <div key={i} className="glass rounded-2xl p-5 flex items-start gap-4 hover:-translate-y-0.5 transition">
                 <div className="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0 text-sm">
@@ -219,7 +218,7 @@ export default async function LandingPage() {
           <div className="text-center mb-12">
             <h2 className="text-2xl sm:text-4xl font-extrabold text-gray-900 dark:text-white">Bizning jamoa</h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-md mx-auto">
-              Biz — 2 nafar tibbiyot talabasi. O&apos;zimizga kerakli platformani o&apos;zimiz yaratdik.
+              Biz — ikki tibbiyot talabasi. O&apos;zimizga kerakli platforma yo&apos;qligini ko&apos;rdik — va o&apos;zimiz yaratdik.
             </p>
           </div>
 
@@ -228,14 +227,14 @@ export default async function LandingPage() {
               {
                 name: 'Yahyobek',
                 role: 'Tibbiyot talabasi & Dasturchi',
-                bio: 'Frontend va backend dasturlash bilan shug\'ullanadi. MedCapsula platformasining texnik qismini yaratgan.',
+                bio: 'Frontend va backend ishlab chiqishdan texnik arxitekturagacha — MedCapsuladagi barcha texnik yechimlar uning qo\'lida.',
                 icon: 'fa-laptop-code',
                 gradient: 'from-cyan-400 to-cyan-500',
               },
               {
                 name: 'Ismoil',
                 role: 'Tibbiyot talabasi & Kontent muharriri',
-                bio: 'Barcha video darslar, konspektlar va testlarni tayyorlaydi. Tibbiy kontentning sifatini nazorat qiladi.',
+                bio: 'Videodarslar, konspektlar va testlar — barchasini tibbiy bilimi asosida o\'zi tayyorlaydi va sifatini nazorat qiladi.',
                 icon: 'fa-stethoscope',
                 gradient: 'from-emerald-400 to-emerald-500',
               },
@@ -294,14 +293,14 @@ export default async function LandingPage() {
               Bugun o&apos;rganishni boshlang
             </h2>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 max-w-sm mx-auto">
-              Bepul ro&apos;yxatdan o&apos;ting va tibbiyotni yangi usulda o&apos;zlashtiring.
+              Ro&apos;yxatdan o&apos;tish bepul va bir daqiqa vaqt oladi. Birinchi darsga hoziroq kirish mumkin.
             </p>
             <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
               <Link
                 href="/auth/register"
                 className="accent-bg rounded-xl px-7 py-3 text-sm font-bold shadow-lg shadow-emerald-500/25 hover:shadow-xl hover:shadow-emerald-500/30 transition"
               >
-                Bepul ro&apos;yxatdan o&apos;tish
+                Bepul ro&apos;yxatdan o&apos;tish <i className="fa-solid fa-arrow-right ml-1.5"></i>
               </Link>
               <Link
                 href="/subjects"
@@ -324,8 +323,8 @@ export default async function LandingPage() {
             MedCapsula &copy; {new Date().getFullYear()}
           </div>
           <div className="flex items-center gap-4">
-            <a href="https://t.me/Med_Capsula" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition">
-              <i className="fa-brands fa-telegram"></i>
+            <a href="https://t.me/Med_Capsula" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-400 transition flex items-center gap-1">
+              <i className="fa-brands fa-telegram"></i> Telegram
             </a>
           </div>
         </div>
