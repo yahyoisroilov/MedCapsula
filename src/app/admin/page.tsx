@@ -12,24 +12,22 @@ export default function AdminPage() {
   const [checking, setChecking] = useState(true)
 
   useEffect(() => {
+    let cancelled = false
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (cancelled) return
       if (!user) { router.replace('/auth/login'); return }
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      if (cancelled) return
       if (profile?.role !== 'admin') { setSession(null); setChecking(false); return }
       setSession(user)
-      const [coursesRes, usersRes, progressRes] = await Promise.all([
-        supabase.from('courses').select('id'),
-        supabase.from('profiles').select('id'),
-        supabase.from('lesson_progress').select('id'),
-      ])
-      setStats({
-        courses: coursesRes.data?.length || 0,
-        users: usersRes.data?.length || 0,
-        activities: progressRes.data?.length || 0,
-      })
-      setChecking(false)
+      const res = await fetch('/api/admin/stats')
+      if (!cancelled && res.ok) {
+        setStats(await res.json())
+      }
+      if (!cancelled) setChecking(false)
     })
+    return () => { cancelled = true }
   }, [router])
 
   if (checking) {

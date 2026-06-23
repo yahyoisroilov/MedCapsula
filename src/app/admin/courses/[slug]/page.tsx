@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -13,17 +13,22 @@ export default function AdminCourseDetailPage() {
   const [lessons, setLessons] = useState<any[]>([])
   const [saving, setSaving] = useState(false)
   const [checking, setChecking] = useState(true)
+  const [error, setError] = useState('')
 
   useEffect(() => {
+    let cancelled = false
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (cancelled) return
       if (!user) { router.replace('/auth/login'); return }
       const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      if (cancelled) return
       if (profile?.role !== 'admin') { setChecking(false); return }
       setSession(user)
       loadCourse()
       setChecking(false)
     })
+    return () => { cancelled = true }
   }, [slug, router])
 
   async function loadCourse() {
@@ -38,39 +43,50 @@ export default function AdminCourseDetailPage() {
   async function saveCourse() {
     if (!course) return
     setSaving(true)
-    const supabase = createClient()
-    await supabase.from('courses').update({
-      title: course.title,
-      slug: course.slug,
-      subtitle: course.subtitle,
-      description: course.description,
-      icon: course.icon,
-      level: course.level,
-      category: course.category,
-      instructor: course.instructor,
-      published: course.published,
-    }).eq('id', course.id)
+    setError('')
+    const res = await fetch('/api/admin/courses', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(course),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error || 'Saqlashda xatolik')
+      setSaving(false)
+      return
+    }
+    if (course.slug !== slug) {
+      router.replace('/admin/courses/' + course.slug)
+    }
     setSaving(false)
   }
 
   async function addLesson() {
-    const supabase = createClient()
-    const lastIndex = lessons.length > 0 ? Math.max(...lessons.map(l => l.order_index)) : -1
-    const { data } = await supabase.from('lessons').insert({
-      course_id: course.id,
-      title: 'Yangi mavzu',
-      description: '',
-      order_index: lastIndex + 1,
-    }).select().single()
-    if (data) setLessons([...lessons, data])
+    const res = await fetch('/api/admin/lessons', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courseId: course.id }),
+    })
+    if (res.ok) {
+      const data = await res.json()
+      setLessons([...lessons, data])
+    } else {
+      setError('Mavzu qo\'shishda xatolik')
+    }
   }
 
   async function deleteLesson(lesson: any) {
     if (!confirm(`"${lesson.title}" ni o'chirishni tasdiqlaysizmi?`)) return
-    const supabase = createClient()
-    await supabase.from('lesson_progress').delete().eq('lesson_index', lessons.indexOf(lesson)).eq('course_id', course.id)
-    await supabase.from('lessons').delete().eq('id', lesson.id)
-    setLessons(lessons.filter(l => l.id !== lesson.id))
+    const res = await fetch('/api/admin/lessons', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: lesson.id }),
+    })
+    if (res.ok) {
+      setLessons(lessons.filter(l => l.id !== lesson.id))
+    } else {
+      setError('Mavzuni o\'chirishda xatolik')
+    }
   }
 
   function updateLesson(index: number, field: string, value: any) {
@@ -78,15 +94,16 @@ export default function AdminCourseDetailPage() {
   }
 
   async function saveLesson(lesson: any) {
-    const supabase = createClient()
-    await supabase.from('lessons').update({
-      title: lesson.title,
-      description: lesson.description,
-      video_url: lesson.video_url,
-      notes_content: lesson.notes_content,
-      quiz: lesson.quiz,
-      duration: lesson.duration,
-    }).eq('id', lesson.id)
+    setError('')
+    const res = await fetch('/api/admin/lessons', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(lesson),
+    })
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      setError(data.error || 'Saqlashda xatolik')
+    }
   }
 
   if (checking) {
@@ -195,6 +212,99 @@ export default function AdminCourseDetailPage() {
   )
 }
 
+function QuizEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const questions = useMemo(() => {
+    try { return JSON.parse(value || '[]') as any[] } catch { return [] }
+  }, [value])
+
+  function addQuestion() {
+    const qs = [...questions, { q: 'Yangi savol', a: ['Javob A', 'Javob B', 'Javob C', 'Javob D'], correct: 0, exp: '' }]
+    onChange(JSON.stringify(qs))
+  }
+
+  function removeQuestion(idx: number) {
+    const qs = questions.filter((_: any, i: number) => i !== idx)
+    onChange(JSON.stringify(qs))
+  }
+
+  function updateQuestion(idx: number, field: string, val: any) {
+    const qs = questions.map((q: any, i: number) => i === idx ? { ...q, [field]: val } : q)
+    onChange(JSON.stringify(qs))
+  }
+
+  function updateAnswer(qIdx: number, aIdx: number, val: string) {
+    const qs = questions.map((q: any, i: number) =>
+      i === qIdx ? { ...q, a: q.a.map((a: string, j: number) => j === aIdx ? val : a) } : q
+    )
+    onChange(JSON.stringify(qs))
+  }
+
+  function addAnswer(idx: number) {
+    const qs = questions.map((q: any, i: number) =>
+      i === idx ? { ...q, a: [...q.a, ''] } : q
+    )
+    onChange(JSON.stringify(qs))
+  }
+
+  function removeAnswer(qIdx: number, aIdx: number) {
+    const qs = questions.map((q: any, i: number) =>
+      i === qIdx ? { ...q, a: q.a.filter((_: any, j: number) => j !== aIdx), correct: q.correct === aIdx ? 0 : q.correct } : q
+    )
+    onChange(JSON.stringify(qs))
+  }
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2">
+        <label className="text-xs font-semibold text-gray-500 dark:text-gray-400">Test savollari</label>
+        <button onClick={addQuestion} className="text-xs font-bold text-emerald-500 hover:text-emerald-400 bg-emerald-500/10 px-3 py-1.5 rounded-lg transition">
+          <i className="fa-solid fa-plus mr-1"></i> Savol qo'shish
+        </button>
+      </div>
+      {questions.length === 0 && (
+        <p className="text-xs text-gray-400 mb-2">Hali savollar yo'q. "Savol qo'shish" tugmasini bosing.</p>
+      )}
+      <div className="space-y-3">
+        {questions.map((q: any, qi: number) => (
+          <div key={qi} className="border border-black/5 dark:border-white/10 rounded-xl p-3">
+            <div className="flex items-start gap-2 mb-2">
+              <span className="h-6 w-6 rounded-lg accent-bg flex items-center justify-center text-xs font-bold shrink-0 mt-0.5">{qi + 1}</span>
+              <div className="flex-1">
+                <input value={q.q} onChange={e => updateQuestion(qi, 'q', e.target.value)}
+                  className="w-full bg-gray-100 dark:bg-white/5 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 border border-transparent focus:border" />
+              </div>
+              <button onClick={() => removeQuestion(qi)} className="text-gray-400 hover:text-red-500 text-xs p-1">
+                <i className="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+            <div className="space-y-1 ml-8">
+              {q.a.map((a: string, ai: number) => (
+                <div key={ai} className="flex items-center gap-2">
+                  <input type="radio" name={`correct-${qi}`} checked={q.correct === ai}
+                    onChange={() => updateQuestion(qi, 'correct', ai)} className="shrink-0" />
+                  <input value={a} onChange={e => updateAnswer(qi, ai, e.target.value)}
+                    className="flex-1 bg-gray-100 dark:bg-white/5 rounded-lg px-3 py-1.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 border border-transparent focus:border" />
+                  <button onClick={() => removeAnswer(qi, ai)} className="text-gray-400 hover:text-red-500 text-xs p-1">
+                    <i className="fa-solid fa-xmark"></i>
+                  </button>
+                </div>
+              ))}
+              <button onClick={() => addAnswer(qi)} className="text-xs text-gray-400 hover:text-emerald-500">
+                <i className="fa-solid fa-plus mr-1"></i> Javob qo'shish
+              </button>
+            </div>
+            <div className="ml-8 mt-2">
+              <input value={q.exp || ''} onChange={e => updateQuestion(qi, 'exp', e.target.value)}
+                placeholder="Izoh (ixtiyoriy)"
+                className="w-full bg-gray-100 dark:bg-white/5 rounded-lg px-3 py-1.5 text-xs text-gray-500 dark:text-gray-400 focus:outline-none focus:border-emerald-500 border border-transparent focus:border" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function LessonEditor({ lesson, index, onChange, onSave, onDelete }: {
   lesson: any; index: number; onChange: (field: string, value: any) => void; onSave: () => void; onDelete: () => void
 }) {
@@ -233,12 +343,7 @@ function LessonEditor({ lesson, index, onChange, onSave, onDelete }: {
           <textarea value={lesson.notes_content || ''} onChange={e => onChange('notes_content', e.target.value)} rows={4}
             className="w-full bg-gray-100 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 resize-y font-mono" />
         </div>
-        <div>
-          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Test (JSON format)</label>
-          <textarea value={lesson.quiz || ''} onChange={e => onChange('quiz', e.target.value)} rows={3}
-            placeholder='[{"q":"Savol?","a":["A","B","C","D"],"correct":0,"exp":"Izoh"}]'
-            className="w-full bg-gray-100 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 resize-y font-mono" />
-        </div>
+        <QuizEditor value={lesson.quiz || ''} onChange={v => onChange('quiz', v)} />
         <div>
           <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Davomiyligi (daqiqa)</label>
           <input type="number" value={lesson.duration || ''} onChange={e => onChange('duration', parseInt(e.target.value) || null)}

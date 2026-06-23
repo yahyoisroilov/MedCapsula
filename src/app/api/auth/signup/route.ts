@@ -19,7 +19,7 @@ export async function POST(request: Request) {
       email,
       password,
       email_confirm: true,
-      user_metadata: { name, role: email.includes('admin') ? 'admin' : 'student' },
+      user_metadata: { name, role: 'student' },
     })
 
     if (error) {

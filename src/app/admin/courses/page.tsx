@@ -43,8 +43,11 @@ export default function AdminCoursesPage() {
     e.preventDefault()
     if (!form.title || !form.slug) return
     setCreating(true)
-    const supabase = createClient()
-    await supabase.from('courses').insert({ title: form.title, slug: form.slug, icon: form.icon, published: false })
+    await fetch('/api/admin/courses', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: form.title, slug: form.slug, icon: form.icon, published: false }),
+    })
     setCreating(false)
     setShowCreate(false)
     setForm({ title: '', slug: '', icon: 'fa-book-medical' })
@@ -54,10 +57,11 @@ export default function AdminCoursesPage() {
   async function handleDelete(course: any) {
     if (!confirm(`"${course.title}" ni o'chirishni tasdiqlaysizmi?`)) return
     setDeleting(course.id)
-    const supabase = createClient()
-    await supabase.from('lesson_progress').delete().eq('course_id', course.id)
-    await supabase.from('lessons').delete().eq('course_id', course.id)
-    await supabase.from('courses').delete().eq('id', course.id)
+    await fetch('/api/admin/courses', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: course.id }),
+    })
     setDeleting(null)
     loadCourses()
   }

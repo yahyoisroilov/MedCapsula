@@ -33,8 +33,8 @@ export async function PUT(request: Request) {
   const { error } = await admin.from('lessons').update({
     title: body.title,
     description: body.description,
-    video_url: body.videoUrl,
-    notes_content: body.notesContent,
+    video_url: body.video_url,
+    notes_content: body.notes_content,
     quiz: body.quiz,
     duration: body.duration,
   }).eq('id', body.id)

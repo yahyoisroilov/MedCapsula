@@ -78,7 +78,7 @@ export default function DashboardPage() {
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Fanlardagi yutuqlaringiz va davom etilgan mavzular.</p>
         </div>
         <Link href="/" className="accent-bg rounded-xl px-4 py-2.5 text-sm font-bold flex items-center gap-2">
-          <i className="fa-solid fa-plus"></i> Yangi fan
+          <i className="fa-solid fa-book"></i> Fanlarni ko'rish
         </Link>
       </div>
 

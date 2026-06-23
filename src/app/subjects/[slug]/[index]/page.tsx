@@ -98,7 +98,6 @@ export default function TopicDetailPage() {
           duration: lesson.duration,
         }}
         courseId={course.id}
-        slug={slug}
         lessonIndex={index}
         initialStep={step}
       />

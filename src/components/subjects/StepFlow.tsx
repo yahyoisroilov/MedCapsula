@@ -22,7 +22,6 @@ interface StepFlowProps {
     duration: number | null
   }
   courseId: string
-  slug: string
   lessonIndex: number
   initialStep: string | number
 }
@@ -39,10 +38,11 @@ function completedCount(step: string | number): number {
   return Math.min(s, 3)
 }
 
-export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: StepFlowProps) {
+export function StepFlow({ lesson, courseId, lessonIndex, initialStep }: StepFlowProps) {
   const [topicStep, setTopicStep] = useState(() => {
     if (initialStep === 'done') return 2
-    return Math.min(Number(initialStep), 2)
+    const n = Number(initialStep)
+    return Math.min(isNaN(n) ? 0 : n, 2)
   })
   const [completed, setCompleted] = useState(completedCount(initialStep))
   const [quizState, setQuizState] = useState<{
@@ -57,24 +57,30 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      await supabase.from('lesson_progress').upsert({
+      const { error } = await supabase.from('lesson_progress').upsert({
         user_id: user.id,
         course_id: courseId,
         lesson_index: lessonIndex,
         step: String(step),
         updated_at: new Date().toISOString(),
       }, { onConflict: 'user_id,course_id,lesson_index' })
-      setCompleted(completedCount(step))
+      if (!error) setCompleted(completedCount(step))
     } catch (e) {
       console.error('saveProgress', e)
     }
   }, [courseId, lessonIndex])
 
   useEffect(() => {
-    if (topicStep === 2) {
+    if (topicStep === 2 && !quizState) {
       setQuizState({ idx: 0, score: 0, selected: null, finished: false })
     }
-  }, [topicStep])
+  }, [topicStep, quizState])
+
+  const questions: QuizQuestion[] = (() => {
+    try {
+      return JSON.parse(lesson.quiz || '[]')
+    } catch { return [] }
+  })()
 
   const completeStep = async (step: number) => {
     const cur = initialStep
@@ -91,13 +97,10 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
         setQuizState({ idx: 0, score: 0, selected: null, finished: false })
       }
     }
+    if (step === 2 && questions.length === 0) {
+      setTopicStep(0)
+    }
   }
-
-  const questions: QuizQuestion[] = (() => {
-    try {
-      return JSON.parse(lesson.quiz || '[]')
-    } catch { return [] }
-  })()
 
   return (
     <div>
@@ -238,8 +241,6 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
                 setQuizState={setQuizState}
                 onFinish={() => completeStep(2)}
                 onBack={() => setTopicStep(1)}
-                slug={slug}
-                lessonIndex={lessonIndex}
               />
             )}
           </div>
@@ -261,8 +262,6 @@ function QuizContent({
   setQuizState: (s: any) => void
   onFinish: () => void
   onBack: () => void
-  slug: string
-  lessonIndex: number
 }) {
   if (quizState.finished) {
     const pct = questions.length > 0 ? Math.round((quizState.score / questions.length) * 100) : 0

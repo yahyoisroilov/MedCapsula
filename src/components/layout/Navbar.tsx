@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 type NavSession = {
   id: string
@@ -17,12 +18,32 @@ export function Navbar() {
   const router = useRouter()
   const [session, setSession] = useState<NavSession>(null)
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [dark, setDark] = useState(true)
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(setSession)
-      .catch(() => setSession(null))
+    const stored = localStorage.getItem('medCapsula_theme')
+    const isDark = stored === 'dark' || stored === null
+    setDark(isDark)
+    if (isDark) document.documentElement.classList.add('dark')
+    else document.documentElement.classList.remove('dark')
+  }, [])
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { setSession(null); return }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, role')
+        .eq('id', user.id)
+        .single()
+      setSession({
+        id: user.id,
+        email: user.email!,
+        name: profile?.name || user.user_metadata?.name || '',
+        role: profile?.role || 'student',
+      })
+    })
   }, [])
 
   const isActive = (href: string) => {
@@ -36,7 +57,8 @@ export function Navbar() {
   ]
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
+    const supabase = createClient()
+    await supabase.auth.signOut()
     router.push('/')
   }
 
@@ -73,16 +95,15 @@ export function Navbar() {
 
           <button
             onClick={() => {
-              const html = document.documentElement
-              const dark = html.classList.toggle('dark')
-              localStorage.setItem('medCapsula_theme', dark ? 'dark' : 'light')
-              const icon = document.getElementById('themeIcon')
-              if (icon) icon.className = dark ? 'fa-solid fa-moon' : 'fa-solid fa-sun'
+              const next = !dark
+              setDark(next)
+              document.documentElement.classList.toggle('dark', next)
+              localStorage.setItem('medCapsula_theme', next ? 'dark' : 'light')
             }}
             className="p-2.5 rounded-xl bg-gray-200 dark:bg-white/5 text-gray-700 dark:text-gray-400 hover:text-emerald-400 transition-colors"
             title="Tema"
           >
-            <i id="themeIcon" className="fa-solid fa-moon"></i>
+            <i className={`fa-solid ${dark ? 'fa-moon' : 'fa-sun'}`}></i>
           </button>
 
           <div className="hidden sm:flex items-center gap-2">
