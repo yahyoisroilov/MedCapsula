@@ -74,7 +74,7 @@ export default async function LandingPage() {
         <div className="max-w-6xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-4 py-1.5 rounded-full mb-6">
             <i className="fa-solid fa-graduation-cap"></i>
-            <span>O'zbek tibbiyot talabalari uchun</span>
+            <span>Talabalardan — Talabalarga</span>
           </div>
 
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 dark:text-white leading-[1.1] tracking-tight max-w-3xl mx-auto text-balance">

@@ -81,8 +81,8 @@ export function Navbar() {
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
-          <div className="hidden md:flex items-center gap-2 mr-2">
+        <div className="flex items-center gap-2 sm:gap-1.5 flex-wrap justify-end shrink-0">
+          <div className="hidden md:flex items-center gap-1.5 mr-1">
             {tabs.map(tab => (
               <Link
                 key={tab.id}
