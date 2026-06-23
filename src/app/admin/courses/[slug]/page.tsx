@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
+import { MarkdownEditor } from '@/components/ui/MarkdownEditor'
 
 export default function AdminCourseDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -339,9 +340,8 @@ function LessonEditor({ lesson, index, onChange, onSave, onDelete }: {
             className="w-full bg-gray-100 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500" />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Konspekt (markdown)</label>
-          <textarea value={lesson.notes_content || ''} onChange={e => onChange('notes_content', e.target.value)} rows={4}
-            className="w-full bg-gray-100 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500 resize-y font-mono" />
+          <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1">Konspekt</label>
+          <MarkdownEditor value={lesson.notes_content || ''} onChange={v => onChange('notes_content', v)} />
         </div>
         <QuizEditor value={lesson.quiz || ''} onChange={v => onChange('quiz', v)} />
         <div>

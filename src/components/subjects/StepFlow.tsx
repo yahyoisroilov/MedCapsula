@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
 import { createClient } from '@/lib/supabase/client'
+import { MarkdownRenderer } from '@/components/ui/MarkdownEditor'
 
 interface QuizQuestion {
   q: string
@@ -186,7 +187,7 @@ export function StepFlow({ lesson, courseId, lessonIndex, initialStep }: StepFlo
                 <div className="flex items-center gap-2 mb-3 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
                   <i className="fa-solid fa-book-open"></i> Konspekt
                 </div>
-                <div className="whitespace-pre-wrap">{lesson.notesContent}</div>
+                <MarkdownRenderer content={lesson.notesContent} />
               </div>
             ) : (
               <div className="glass rounded-2xl p-10 text-center">
