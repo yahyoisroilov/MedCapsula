@@ -1,47 +1,81 @@
-import { notFound } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { StepFlow } from '@/components/subjects/StepFlow'
 
-export const dynamic = 'force-dynamic'
-
-export default async function TopicDetailPage({ params }: { params: Promise<{ slug: string; index: string }> }) {
-  const { slug, index: indexStr } = await params
+export default function TopicDetailPage() {
+  const { slug, index: indexStr } = useParams<{ slug: string; index: string }>()
   const index = parseInt(indexStr)
-  const supabase = await createClient()
+  const [course, setCourse] = useState<any>(null)
+  const [lesson, setLesson] = useState<any>(null)
+  const [totalTopics, setTotalTopics] = useState(0)
+  const [step, setStep] = useState<string | number>(0)
+  const [loading, setLoading] = useState(true)
 
-  const { data: course } = await supabase
-    .from('courses')
-    .select('*')
-    .eq('slug', slug)
-    .single()
+  useEffect(() => {
+    const supabase = createClient()
+    let cancelled = false
 
-  if (!course) notFound()
+    async function load() {
+      const { data: courseData } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('slug', slug)
+        .single()
 
-  const { data: lessons } = await supabase
-    .from('lessons')
-    .select('*')
-    .eq('course_id', course.id)
-    .order('order_index', { ascending: true })
+      if (cancelled || !courseData) { setLoading(false); return }
+      setCourse(courseData)
 
-  if (!lessons || index < 0 || index >= lessons.length) notFound()
+      const { data: lessons } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('course_id', courseData.id)
+        .order('order_index', { ascending: true })
 
-  const lesson = lessons[index]
-  const totalTopics = lessons.length
+      if (cancelled || !lessons || index < 0 || index >= lessons.length) { setLoading(false); return }
 
-  const { data: { user } } = await supabase.auth.getUser()
-  let step: string | number = 0
+      const lessonData = lessons[index]
+      setLesson(lessonData)
+      setTotalTopics(lessons.length)
 
-  if (user) {
-    const { data: progress } = await supabase
-      .from('lesson_progress')
-      .select('step')
-      .eq('user_id', user.id)
-      .eq('course_id', course.id)
-      .eq('lesson_index', index)
-      .maybeSingle()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: progress } = await supabase
+          .from('lesson_progress')
+          .select('step')
+          .eq('user_id', user.id)
+          .eq('course_id', courseData.id)
+          .eq('lesson_index', index)
+          .maybeSingle()
 
-    if (progress) step = progress.step
+        if (!cancelled && progress) setStep(progress.step)
+      }
+      if (!cancelled) setLoading(false)
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [slug, index])
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        <div className="animate-pulse space-y-4">
+          {[1, 2, 3].map(i => <div key={i} className="h-32 bg-gray-200 dark:bg-white/10 rounded-2xl" />)}
+        </div>
+      </div>
+    )
+  }
+
+  if (!course || !lesson) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-center text-gray-400">
+        Mavzu topilmadi
+      </div>
+    )
   }
 
   return (
@@ -53,22 +87,11 @@ export default async function TopicDetailPage({ params }: { params: Promise<{ sl
         <i className="fa-solid fa-arrow-left"></i> {course.title}
       </Link>
 
-      <h2 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white mb-1">{lesson.title}</h2>
-      <p className="text-xs text-gray-400 mb-5">Mavzu {index + 1} / {totalTopics}</p>
-
       <StepFlow
-        lesson={{
-          id: lesson.id,
-          title: lesson.title,
-          description: lesson.description,
-          videoUrl: lesson.video_url,
-          notesContent: lesson.notes_content,
-          quiz: lesson.quiz || '[]',
-          duration: lesson.duration,
-        }}
-        courseId={course.id}
-        slug={slug}
+        lesson={lesson}
+        subjectTitle={course.title}
         lessonIndex={index}
+        totalTopics={totalTopics}
         initialStep={step}
       />
     </div>

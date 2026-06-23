@@ -1,43 +1,85 @@
-import { notFound } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { createClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/client'
 import { TopicRow } from '@/components/subjects/TopicRow'
 
-export const dynamic = 'force-dynamic'
+export default function SubjectTopicsPage() {
+  const { slug } = useParams<{ slug: string }>()
+  const [course, setCourse] = useState<any>(null)
+  const [lessons, setLessons] = useState<any[]>([])
+  const [progressMap, setProgressMap] = useState<Map<number, string>>(new Map())
+  const [loading, setLoading] = useState(true)
 
-export default async function SubjectTopicsPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = await params
-  const supabase = await createClient()
+  useEffect(() => {
+    const supabase = createClient()
+    let cancelled = false
 
-  const { data: course } = await supabase
-    .from('courses')
-    .select('*')
-    .eq('slug', slug)
-    .single()
+    async function load() {
+      const { data: courseData } = await supabase
+        .from('courses')
+        .select('*')
+        .eq('slug', slug)
+        .single()
 
-  if (!course) notFound()
+      if (cancelled || !courseData) return
+      setCourse(courseData)
 
-  const { data: lessons } = await supabase
-    .from('lessons')
-    .select('*')
-    .eq('course_id', course.id)
-    .order('order_index', { ascending: true })
+      const { data: lessonData } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('course_id', courseData.id)
+        .order('order_index', { ascending: true })
 
-  const { data: { user } } = await supabase.auth.getUser()
+      if (cancelled) return
+      setLessons(lessonData || [])
 
-  let progresses: { lesson_index: number; step: string }[] = []
-  if (user) {
-    const { data } = await supabase
-      .from('lesson_progress')
-      .select('lesson_index, step')
-      .eq('user_id', user.id)
-      .eq('course_id', course.id)
-    progresses = data || []
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: progressData } = await supabase
+          .from('lesson_progress')
+          .select('lesson_index, step')
+          .eq('user_id', user.id)
+          .eq('course_id', courseData.id)
+
+        if (!cancelled) {
+          setProgressMap(new Map((progressData || []).map(p => [p.lesson_index, p.step])))
+        }
+      }
+      if (!cancelled) setLoading(false)
+    }
+
+    load()
+    return () => { cancelled = true }
+  }, [slug])
+
+  if (loading) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-4 w-24 bg-gray-200 dark:bg-white/10 rounded" />
+          <div className="flex items-center gap-3 mb-5">
+            <div className="h-12 w-12 rounded-xl bg-gray-200 dark:bg-white/10" />
+            <div className="h-6 w-48 bg-gray-200 dark:bg-white/10 rounded" />
+          </div>
+          {[1, 2, 3].map(i => <div key={i} className="h-16 bg-gray-200 dark:bg-white/10 rounded-xl" />)}
+        </div>
+      </div>
+    )
   }
 
-  const progressMap = new Map(progresses.map(p => [p.lesson_index, p.step]))
-  const totalTopics = lessons?.length || 0
-  const doneTopics = progresses.filter(p => p.step === 'done').length
+  if (!course) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6 text-center text-gray-400">
+        Fan topilmadi
+      </div>
+    )
+  }
+
+  const totalTopics = lessons.length
+  const doneTopics = [...progressMap.values()].filter(s => s === 'done').length
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
@@ -59,7 +101,7 @@ export default async function SubjectTopicsPage({ params }: { params: Promise<{ 
       </div>
 
       <div className="space-y-3">
-        {(lessons || []).map((lesson, idx) => (
+        {lessons.map((lesson, idx) => (
           <TopicRow
             key={lesson.id}
             slug={slug}
