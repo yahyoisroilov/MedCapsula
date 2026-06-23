@@ -112,7 +112,7 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
               }}
               className="flex items-center gap-2 shrink-0"
             >
-              <span className={cn('h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold transition-all', dotCls)}>
+              <span className={cn('h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold transition', dotCls)}>
                 {done && !active
                   ? <i className="fa-solid fa-check"></i>
                   : <i className={`fa-solid ${st.icon}`}></i>
@@ -318,7 +318,7 @@ function QuizContent({
                 if (oi === q.correct) newState.score++
                 setQuizState(newState)
               }}
-              className={`w-full text-left rounded-xl px-4 py-3.5 text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center justify-between gap-3 transition-all ${cls}`}
+              className={`w-full text-left rounded-xl px-4 py-3.5 text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center justify-between gap-3 transition ${cls}`}
             >
               <span>{opt}</span>
               {answered && oi === q.correct && <i className="fa-solid fa-check text-emerald-500"></i>}

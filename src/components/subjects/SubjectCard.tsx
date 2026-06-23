@@ -14,7 +14,7 @@ export function SubjectCard({ slug, title, icon, totalTopics, doneTopics }: Subj
   return (
     <Link
       href={`/subjects/${slug}`}
-      className="block text-left glass rounded-2xl p-5 hover:border-emerald-500/40 hover:-translate-y-0.5 transition-all group"
+      className="block text-left glass rounded-2xl p-5 hover:border-emerald-500/40 hover:-translate-y-0.5 transition group"
     >
       <div className="flex items-start gap-3 mb-4">
         <div className="h-12 w-12 rounded-xl accent-grad flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
@@ -30,7 +30,7 @@ export function SubjectCard({ slug, title, icon, totalTopics, doneTopics }: Subj
         <span className="accent-text">{pct}%</span>
       </div>
       <div className="h-2 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
-        <div className="h-full accent-grad rounded-full transition-all" style={{ width: `${pct}%` }} />
+        <div className="h-full accent-grad rounded-full transition" style={{ width: `${pct}%` }} />
       </div>
     </Link>
   )

@@ -48,7 +48,7 @@ export default function AdminCoursesPage() {
           <Link
             key={c.id}
             href={`/admin/courses/${c.slug}`}
-            className="flex items-center gap-4 glass rounded-2xl p-4 hover:-translate-y-0.5 transition-all"
+            className="flex items-center gap-4 glass rounded-2xl p-4 hover:-translate-y-0.5 transition"
           >
             <div className="h-12 w-12 rounded-xl accent-grad flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
               <i className={`fa-solid ${c.icon || 'fa-book-medical'} text-white text-lg`}></i>

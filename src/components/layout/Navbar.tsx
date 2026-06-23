@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
-import { createClient } from '@/lib/supabase/client'
 
 type NavSession = {
   id: string
@@ -20,21 +19,10 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
-    const supabase = createClient()
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { setSession(null); return }
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('name, role')
-        .eq('id', user.id)
-        .single()
-      setSession({
-        id: user.id,
-        email: user.email!,
-        name: profile?.name || user.user_metadata?.name || '',
-        role: profile?.role || 'student',
-      })
-    })
+    fetch('/api/auth/me')
+      .then(r => r.ok ? r.json() : null)
+      .then(setSession)
+      .catch(() => setSession(null))
   }, [])
 
   const isActive = (href: string) => {
@@ -48,8 +36,7 @@ export function Navbar() {
   ]
 
   const handleLogout = async () => {
-    const supabase = createClient()
-    await supabase.auth.signOut()
+    await fetch('/api/auth/logout', { method: 'POST' })
     router.push('/')
   }
 
@@ -72,7 +59,7 @@ export function Navbar() {
                 key={tab.id}
                 href={tab.href}
                 className={cn(
-                  'flex items-center gap-1.5 px-3.5 py-2 rounded-xl whitespace-nowrap transition-all text-sm font-bold',
+                  'flex items-center gap-1.5 px-3.5 py-2 rounded-xl whitespace-nowrap transition text-sm font-bold',
                   isActive(tab.href)
                     ? 'accent-bg shadow-sm shadow-emerald-500/30'
                     : 'bg-gray-200/60 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300'
@@ -148,7 +135,7 @@ export function Navbar() {
             href="https://t.me/Med_Capsula"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-3 py-2.5 rounded-xl transition-all hover:bg-emerald-500/20"
+            className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-3 py-2.5 rounded-xl transition hover:bg-emerald-500/20"
           >
             <i className="fa-brands fa-telegram text-base"></i>
           </a>
@@ -170,7 +157,7 @@ export function Navbar() {
               href={tab.href}
               onClick={() => setMobileOpen(false)}
               className={cn(
-                'flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all',
+                'flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition',
                 isActive(tab.href) ? 'accent-bg' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-white/5'
               )}
             >

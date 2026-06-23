@@ -60,7 +60,7 @@ export default function NotesPage() {
               <button
                 key={c.id}
                 onClick={() => setSelectedCourseId(c.id)}
-                className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all ${
+                className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition ${
                   c.id === selectedCourseId
                     ? 'accent-bg'
                     : 'hover:bg-gray-200/60 dark:hover:bg-white/5 text-gray-600 dark:text-gray-300'

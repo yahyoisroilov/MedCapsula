@@ -45,7 +45,7 @@ export function TopicRow({ slug, index, title, step, subjectTitle }: TopicRowPro
     <Link
       href={`/subjects/${slug}/${index}`}
       className={cn(
-        'w-full flex items-center gap-4 text-left glass border rounded-xl p-4 hover:-translate-y-0.5 transition-all',
+        'w-full flex items-center gap-4 text-left glass border rounded-xl p-4 hover:-translate-y-0.5 transition',
         ring
       )}
     >

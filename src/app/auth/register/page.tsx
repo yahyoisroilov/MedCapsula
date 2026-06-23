@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
-import { createClient } from '@/lib/supabase/client'
-
 export default function RegisterPage() {
   const router = useRouter()
   const [error, setError] = useState('')
@@ -29,12 +27,15 @@ export default function RegisterPage() {
     })
 
     if (res.ok) {
-      const supabase = createClient()
-      const { error: loginError } = await supabase.auth.signInWithPassword({
-        email: form.get('email') as string,
-        password: form.get('password') as string,
+      const loginRes = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: form.get('email'),
+          password: form.get('password'),
+        }),
       })
-      if (!loginError) {
+      if (loginRes.ok) {
         router.replace('/')
         return
       }
