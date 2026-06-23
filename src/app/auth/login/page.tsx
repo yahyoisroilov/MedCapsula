@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { createClient } from '@/lib/supabase/client'
 
 function LoginForm() {
   const router = useRouter()
@@ -18,21 +19,18 @@ function LoginForm() {
     setLoading(true)
 
     const form = new FormData(e.currentTarget)
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: form.get('email'),
-        password: form.get('password'),
-      }),
+    const supabase = createClient()
+
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email: form.get('email') as string,
+      password: form.get('password') as string,
     })
 
-    if (res.ok) {
+    if (!authError) {
       const redirect = searchParams.get('redirect') || '/'
       router.replace(redirect)
     } else {
-      const data = await res.json()
-      setError(data.error || 'Login failed')
+      setError(authError.message)
       setLoading(false)
     }
   }

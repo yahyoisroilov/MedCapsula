@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 type NavSession = {
   id: string
@@ -19,10 +20,21 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(setSession)
-      .catch(() => setSession(null))
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { setSession(null); return }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, role')
+        .eq('id', user.id)
+        .single()
+      setSession({
+        id: user.id,
+        email: user.email!,
+        name: profile?.name || user.user_metadata?.name || '',
+        role: profile?.role || 'student',
+      })
+    })
   }, [])
 
   const isActive = (href: string) => {
@@ -36,7 +48,8 @@ export function Navbar() {
   ]
 
   const handleLogout = async () => {
-    await fetch('/api/auth/logout', { method: 'POST' })
+    const supabase = createClient()
+    await supabase.auth.signOut()
     router.push('/')
   }
 
