@@ -36,7 +36,7 @@ export default function RegisterPage() {
         }),
       })
       if (loginRes.ok) {
-        router.replace('/')
+        router.replace('/subjects')
         return
       }
       router.replace('/auth/login')
