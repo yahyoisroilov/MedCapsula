@@ -88,10 +88,18 @@ export default function TopicDetailPage() {
       </Link>
 
       <StepFlow
-        lesson={lesson}
-        subjectTitle={course.title}
+        lesson={{
+          id: lesson.id,
+          title: lesson.title,
+          description: lesson.description,
+          videoUrl: lesson.video_url,
+          notesContent: lesson.notes_content,
+          quiz: lesson.quiz,
+          duration: lesson.duration,
+        }}
+        courseId={course.id}
+        slug={slug}
         lessonIndex={index}
-        totalTopics={totalTopics}
         initialStep={step}
       />
     </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 
 interface NotesEditorProps {
   courseId: string
@@ -12,18 +13,25 @@ export function NotesEditor({ courseId }: NotesEditorProps) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch(`/api/notes?courseId=${courseId}`)
-      .then(r => r.json())
-      .then(d => { setContent(d.content || ''); setLoading(false) })
-      .catch(() => setLoading(false))
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { setLoading(false); return }
+      const { data } = await supabase.from('notes').select('content').eq('user_id', user.id).eq('course_id', courseId).maybeSingle()
+      setContent(data?.content || '')
+      setLoading(false)
+    })
   }, [courseId])
 
   async function handleSave() {
-    await fetch('/api/notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ courseId, content }),
-    })
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
+    await supabase.from('notes').upsert({
+      user_id: user.id,
+      course_id: courseId,
+      content,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,course_id' })
     setSaved(true)
     setTimeout(() => setSaved(false), 1800)
   }

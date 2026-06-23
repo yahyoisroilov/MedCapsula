@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 
 export default function DashboardPage() {
   const [session, setSession] = useState<any>(null)
@@ -9,22 +10,31 @@ export default function DashboardPage() {
   const [progress, setProgress] = useState<any[]>([])
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(setSession)
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { setSession(null); return }
+      const { data: profile } = await supabase.from('profiles').select('name, role').eq('id', user.id).single()
+      setSession({ id: user.id, email: user.email, name: profile?.name || '', role: profile?.role || 'student' })
+    })
   }, [])
 
   useEffect(() => {
-    fetch('/api/courses')
-      .then(r => r.json())
-      .then(setCourses)
+    const supabase = createClient()
+    supabase.from('courses').select('*').eq('published', true).order('created_at', { ascending: true }).then(async ({ data }) => {
+      const withCounts = await Promise.all(
+        (data || []).map(async (c: any) => {
+          const { count } = await supabase.from('lessons').select('*', { count: 'exact', head: true }).eq('course_id', c.id)
+          return { ...c, totalTopics: count || 0 }
+        })
+      )
+      setCourses(withCounts)
+    })
   }, [])
 
   useEffect(() => {
     if (session) {
-      fetch('/api/progress')
-        .then(r => r.json())
-        .then(setProgress)
+      const supabase = createClient()
+      supabase.from('lesson_progress').select('*').eq('user_id', session.id).then(({ data }) => setProgress(data || []))
     }
   }, [session])
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
+import { createClient } from '@/lib/supabase/client'
 
 interface QuizQuestion {
   q: string
@@ -53,11 +54,16 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
 
   const saveProgress = useCallback(async (step: string | number) => {
     try {
-      await fetch('/api/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId, lessonIndex, step: String(step) }),
-      })
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      await supabase.from('lesson_progress').upsert({
+        user_id: user.id,
+        course_id: courseId,
+        lesson_index: lessonIndex,
+        step: String(step),
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,course_id,lesson_index' })
       setCompleted(completedCount(step))
     } catch (e) {
       console.error('saveProgress', e)

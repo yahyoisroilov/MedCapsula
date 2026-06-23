@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { NotesEditor } from '@/components/subjects/NotesEditor'
+import { createClient } from '@/lib/supabase/client'
 
 export default function NotesPage() {
   const [session, setSession] = useState<any>(null)
@@ -10,18 +11,30 @@ export default function NotesPage() {
   const [selectedCourseId, setSelectedCourseId] = useState('')
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(setSession)
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { setSession(null); return }
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('name, role')
+        .eq('id', user.id)
+        .single()
+      setSession({
+        id: user.id,
+        email: user.email,
+        name: profile?.name || user.user_metadata?.name || '',
+        role: profile?.role || 'student',
+      })
+    })
   }, [])
 
   useEffect(() => {
-    fetch('/api/courses')
-      .then(r => r.json())
-      .then((data) => {
-        setCourses(data)
-        if (data.length > 0) setSelectedCourseId(data[0].id)
-      })
+    const supabase = createClient()
+    supabase.from('courses').select('*').eq('published', true).order('created_at', { ascending: true }).then(({ data }) => {
+      const mapped = (data || []).map((c: any) => ({ ...c, totalTopics: 0 }))
+      setCourses(mapped)
+      if (mapped.length > 0) setSelectedCourseId(mapped[0].id)
+    })
   }, [])
 
   if (!session) {

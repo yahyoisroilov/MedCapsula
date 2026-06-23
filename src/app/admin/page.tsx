@@ -2,44 +2,47 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 export default function AdminPage() {
+  const router = useRouter()
   const [session, setSession] = useState<any>(null)
-  const [courses, setCourses] = useState<any[]>([])
   const [stats, setStats] = useState({ courses: 0, users: 0, activities: 0 })
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(setSession)
-  }, [])
-
-  useEffect(() => {
-    fetch('/api/courses')
-      .then(r => r.json())
-      .then((data) => {
-        setCourses(data)
-        setStats(prev => ({ ...prev, courses: data.length }))
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (!user) { router.replace('/auth/login'); return }
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      if (profile?.role !== 'admin') { setSession(null); setChecking(false); return }
+      setSession(user)
+      const [coursesRes, usersRes, progressRes] = await Promise.all([
+        supabase.from('courses').select('id'),
+        supabase.from('profiles').select('id'),
+        supabase.from('lesson_progress').select('id'),
+      ])
+      setStats({
+        courses: coursesRes.data?.length || 0,
+        users: usersRes.data?.length || 0,
+        activities: progressRes.data?.length || 0,
       })
-  }, [])
+      setChecking(false)
+    })
+  }, [router])
 
-  useEffect(() => {
-    if (session) {
-      fetch('/api/progress')
-        .then(r => r.json())
-        .then((data) => setStats(prev => ({ ...prev, activities: data.length })))
-    }
-  }, [session])
+  if (checking) {
+    return <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 text-center text-gray-400"><i className="fa-solid fa-spinner animate-spin text-xl"></i></div>
+  }
 
-  if (!session || session.role !== 'admin') {
+  if (!session) {
     return (
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 text-center">
         <div className="glass rounded-2xl p-10 inline-block">
           <h2 className="font-bold text-red-500 mb-2">Ruxsat yo'q</h2>
           <p className="text-sm text-gray-400">Faqat adminlar uchun.</p>
-          <Link href="/" className="accent-bg rounded-xl px-5 py-2.5 text-sm font-bold inline-block mt-4">
-            Bosh sahifa
-          </Link>
+          <Link href="/" className="accent-bg rounded-xl px-5 py-2.5 text-sm font-bold inline-block mt-4">Bosh sahifa</Link>
         </div>
       </div>
     )
@@ -89,7 +92,6 @@ export default function AdminPage() {
           <h2 className="font-extrabold text-gray-900 dark:text-white mb-4">Tezkor amallar</h2>
           <div className="space-y-3">
             <Link href="/admin/courses" className="accent-bg rounded-xl px-4 py-3 text-sm font-bold block text-center">Fanlarni boshqarish</Link>
-            <Link href="/admin/courses" className="block text-center bg-gray-200 dark:bg-white/10 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 dark:text-white">Yangi fan qo'shish</Link>
           </div>
         </div>
         <div className="glass rounded-2xl p-6">

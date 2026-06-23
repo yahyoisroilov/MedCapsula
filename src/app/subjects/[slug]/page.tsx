@@ -79,7 +79,7 @@ export default function SubjectTopicsPage() {
   }
 
   const totalTopics = lessons.length
-  const doneTopics = [...progressMap.values()].filter(s => s === 'done').length
+  const doneTopics = Array.from(progressMap.values()).filter(s => s === 'done').length
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
