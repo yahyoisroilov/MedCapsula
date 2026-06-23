@@ -10,6 +10,9 @@ const plusJakarta = Plus_Jakarta_Sans({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'MedCapsula — Tibbiy O\'quv Platformasi',
   description: 'Tibbiyot fanlarini interaktiv 3 bosqichli tizimda o\'rganing: Video, Konspekt, Test.',
+  icons: {
+    icon: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
