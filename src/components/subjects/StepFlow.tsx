@@ -23,6 +23,7 @@ interface StepFlowProps {
     duration: number | null
   }
   courseId: string
+  courseSlug: string
   lessonIndex: number
   initialStep: string | number
 }
@@ -39,7 +40,7 @@ function completedCount(step: string | number): number {
   return Math.min(s, 3)
 }
 
-export function StepFlow({ lesson, courseId, lessonIndex, initialStep }: StepFlowProps) {
+export function StepFlow({ lesson, courseId, courseSlug, lessonIndex, initialStep }: StepFlowProps) {
   const [topicStep, setTopicStep] = useState(() => {
     if (initialStep === 'done') return 2
     const n = Number(initialStep)
@@ -98,8 +99,8 @@ export function StepFlow({ lesson, courseId, lessonIndex, initialStep }: StepFlo
         setQuizState({ idx: 0, score: 0, selected: null, finished: false })
       }
     }
-    if (step === 2 && questions.length === 0) {
-      setTopicStep(0)
+    if (step === 2) {
+      window.location.href = `/subjects/${courseSlug}`
     }
   }
 
