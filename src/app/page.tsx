@@ -40,8 +40,22 @@ async function getCourses() {
   }
 }
 
+async function getStats() {
+  try {
+    const supabase = await createClient()
+    const { count: courses } = await supabase.from('courses').select('*', { count: 'exact', head: true }).eq('published', true)
+    const { count: lessons } = await supabase.from('lessons').select('*', { count: 'exact', head: true })
+    const { count: users } = await supabase.from('profiles').select('*', { count: 'exact', head: true }).neq('role', 'admin')
+    const { count: completed } = await supabase.from('lesson_progress').select('*', { count: 'exact', head: true }).eq('step', 'done')
+    return { courses: courses || 0, lessons: lessons || 0, users: users || 0, completed: completed || 0 }
+  } catch {
+    return { courses: 0, lessons: 0, users: 0, completed: 0 }
+  }
+}
+
 export default async function LandingPage() {
   const courses = await getCourses()
+  const stats = await getStats()
 
   return (
     <div className="overflow-hidden">
@@ -89,27 +103,24 @@ export default async function LandingPage() {
             </Link>
           </div>
 
-          <div className="mt-14 sm:mt-20 max-w-2xl mx-auto">
-            <div className="relative glass rounded-2xl p-4 sm:p-6 shadow-2xl shadow-emerald-500/5">
+          <div className="mt-14 sm:mt-20 max-w-lg mx-auto">
+            <div className="relative glass rounded-2xl p-6 sm:p-7 shadow-2xl shadow-emerald-500/5">
               <div className="absolute -inset-0.5 rounded-2xl bg-gradient-to-r from-cyan-400/20 to-emerald-400/20 blur-xl -z-10" />
-              <div className="flex items-center gap-3 mb-4">
-                <div className="flex -space-x-2">
-                  {['#34d399', '#22d4c2', '#0ea5e9'].map((c, i) => (
-                    <div key={i} className="h-3 w-3 rounded-full" style={{ background: c }} />
-                  ))}
-                </div>
-                <div className="text-[11px] text-gray-400 font-semibold">medcapsula.uz</div>
-                <div className="ml-auto text-[11px] text-gray-400">
-                  <i className="fa-solid fa-ellipsis-vertical"></i>
-                </div>
-              </div>
-              <div className="space-y-2 text-left">
-                <div className="h-3 w-3/4 rounded-full bg-gray-200 dark:bg-white/10" />
-                <div className="h-3 w-1/2 rounded-full bg-gray-200 dark:bg-white/10" />
-                <div className="h-3 w-5/6 rounded-full bg-gray-200 dark:bg-white/10" />
-                <div className="h-16 rounded-xl bg-gradient-to-r from-cyan-400/10 to-emerald-400/10 border border-cyan-400/10 flex items-center justify-center mt-3">
-                  <i className="fa-solid fa-play text-emerald-400 text-xl"></i>
-                </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-5 sm:gap-6">
+                {[
+                  { value: stats.courses, label: 'Fanlar', icon: 'fa-book' },
+                  { value: stats.lessons, label: 'Mavzular', icon: 'fa-video' },
+                  { value: stats.users, label: 'Talabalar', icon: 'fa-user-graduate' },
+                  { value: stats.completed, label: 'Tugatilgan', icon: 'fa-check-circle' },
+                ].map((s, i) => (
+                  <div key={i} className="text-center">
+                    <div className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">{s.value}</div>
+                    <div className="text-[11px] text-gray-400 mt-0.5 flex items-center justify-center gap-1">
+                      <i className={`fa-solid ${s.icon}`}></i>
+                      <span>{s.label}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
