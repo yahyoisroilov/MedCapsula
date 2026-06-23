@@ -44,6 +44,12 @@ export function Navbar() {
         role: profile?.role || 'student',
       })
     })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') setSession(null)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   const isActive = (href: string) => {
@@ -57,6 +63,7 @@ export function Navbar() {
   ]
 
   const handleLogout = async () => {
+    setSession(null)
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push('/')
@@ -144,9 +151,9 @@ export function Navbar() {
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="accent-bg rounded-xl px-3 sm:px-4 py-2 text-sm font-bold whitespace-nowrap"
+                  className="accent-bg rounded-xl px-3 sm:px-4 py-2 text-sm font-bold whitespace-nowrap shrink-0"
                 >
-                  Ro'yxat
+                  Ro'yxatdan o'tish
                 </Link>
               </>
             )}
