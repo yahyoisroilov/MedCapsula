@@ -29,7 +29,7 @@ function LoginForm() {
     })
 
     if (res.ok) {
-      const redirect = searchParams.get('redirect') || '/'
+      const redirect = searchParams.get('redirect') || '/subjects'
       router.replace(redirect)
     } else {
       const data = await res.json()

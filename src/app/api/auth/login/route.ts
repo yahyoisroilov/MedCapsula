@@ -20,7 +20,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 401 })
     }
 
-    // Fetch profile to get name + role
     const { data: profile } = await supabase
       .from('profiles')
       .select('name, role')

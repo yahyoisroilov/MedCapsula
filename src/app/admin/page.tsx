@@ -1,96 +1,101 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/Button'
-import { BookOpen, User, GraduationCap } from '@/components/ui/icons'
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
+import { BookOpen, User, GraduationCap, RotateCw } from '@/components/ui/icons'
 
 export default function AdminPage() {
+  const router = useRouter()
   const [session, setSession] = useState<any>(null)
-  const [courses, setCourses] = useState<any[]>([])
   const [stats, setStats] = useState({ courses: 0, users: 0, activities: 0 })
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(setSession)
-  }, [])
+    let cancelled = false
+    const supabase = createClient()
+    supabase.auth.getUser().then(async ({ data: { user } }) => {
+      if (cancelled) return
+      if (!user) { router.replace('/auth/login'); return }
+      const { data: profile } = await supabase.from('profiles').select('role').eq('id', user.id).single()
+      if (cancelled) return
+      if (profile?.role !== 'admin') { setSession(null); setChecking(false); return }
+      setSession(user)
+      const res = await fetch('/api/admin/stats')
+      if (!cancelled && res.ok) {
+        setStats(await res.json())
+      }
+      if (!cancelled) setChecking(false)
+    })
+    return () => { cancelled = true }
+  }, [router])
 
-  useEffect(() => {
-    fetch('/api/courses')
-      .then(r => r.json())
-      .then((data) => {
-        setCourses(data)
-        setStats(prev => ({ ...prev, courses: data.length }))
-      })
-  }, [])
+  if (checking) {
+    return <div className="relative z-[2] mx-auto max-w-shell px-5 py-20 text-center text-ink-faint sm:px-10"><RotateCw className="mx-auto h-6 w-6 animate-spin" /></div>
+  }
 
-  useEffect(() => {
-    if (session) {
-      fetch('/api/progress')
-        .then(r => r.json())
-        .then((data) => setStats(prev => ({ ...prev, activities: data.length })))
-    }
-  }, [session])
-
-  if (!session || session.role !== 'admin') {
+  if (!session) {
     return (
       <div className="relative z-[2] mx-auto max-w-shell px-5 py-20 text-center sm:px-10">
-        <div className="mc-card inline-block p-10">
-          <h2 className="font-serif text-xl font-semibold text-[#b3493d]">Ruxsat yo'q</h2>
-          <p className="mt-2 text-sm text-ink-mute">Faqat adminlar uchun.</p>
-          <Button href="/" size="sm" className="mt-4">Bosh sahifa</Button>
+        <div className="mx-auto inline-block rounded-2xl border border-[rgba(43,39,34,0.1)] bg-sand-card p-10 shadow-card">
+          <h2 className="font-serif text-lg font-semibold text-[#b3493d] mb-2">Ruxsat yo'q</h2>
+          <p className="text-sm text-ink-mute">Faqat adminlar uchun.</p>
+          <Link href="/" className="btn-sm mx-auto mt-4">Bosh sahifa</Link>
         </div>
       </div>
     )
   }
 
-  const cards = [
-    { value: stats.courses, label: 'Fanlar', icon: <BookOpen className="h-5 w-5" />, tone: 'green' as const },
-    { value: stats.users, label: 'Foydalanuvchilar', icon: <User className="h-5 w-5" />, tone: 'blue' as const },
-    { value: stats.activities, label: 'Faoliyatlar', icon: <GraduationCap className="h-5 w-5" />, tone: 'green' as const },
-  ]
-
   return (
     <div className="relative z-[2] mx-auto max-w-shell px-5 py-12 sm:px-10">
-      <div>
-        <span className="mc-label">Admin</span>
-        <h1 className="mt-2 font-serif text-[clamp(28px,3.4vw,40px)] font-semibold tracking-[-0.02em] text-ink">
-          Admin panel
-        </h1>
-        <p className="mt-1 text-sm text-ink-mute">Fanlar va foydalanuvchilarni boshqarish.</p>
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="font-serif text-2xl sm:text-3xl font-semibold tracking-[-0.02em] text-ink">Admin panel</h1>
+          <p className="text-sm text-ink-mute mt-1">Fanlar va foydalanuvchilarni boshqarish.</p>
+        </div>
       </div>
 
-      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {cards.map(c => (
-          <div key={c.label} className="mc-card p-5">
-            <div className="flex items-center gap-3">
-              <div
-                className={`grid h-10 w-10 place-items-center rounded-xl ${
-                  c.tone === 'green' ? 'bg-brand-tint text-brand' : 'bg-sky-tint text-sky'
-                }`}
-              >
-                {c.icon}
-              </div>
-              <div className="font-serif text-[34px] font-semibold text-ink">{c.value}</div>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+        <div className="mc-card p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 rounded-xl bg-brand text-sand flex items-center justify-center shadow-btn-sm">
+              <BookOpen className="h-5 w-5" />
             </div>
-            <div className="mt-2 font-mono text-[12px] uppercase tracking-[0.04em] text-ink-faint">
-              {c.label}
-            </div>
+            <div className="font-serif text-3xl font-semibold text-ink">{stats.courses}</div>
           </div>
-        ))}
+          <div className="font-mono text-[12px] uppercase tracking-[0.04em] text-ink-faint">Fanlar</div>
+        </div>
+        <div className="mc-card p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 rounded-xl bg-sky-tint text-sky flex items-center justify-center">
+              <User className="h-5 w-5" />
+            </div>
+            <div className="font-serif text-3xl font-semibold text-ink">{stats.users}</div>
+          </div>
+          <div className="font-mono text-[12px] uppercase tracking-[0.04em] text-ink-faint">Foydalanuvchilar</div>
+        </div>
+        <div className="mc-card p-5">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="h-10 w-10 rounded-xl bg-brand-tint text-brand flex items-center justify-center">
+              <GraduationCap className="h-5 w-5" />
+            </div>
+            <div className="font-serif text-3xl font-semibold text-ink">{stats.activities}</div>
+          </div>
+          <div className="font-mono text-[12px] uppercase tracking-[0.04em] text-ink-faint">Faoliyatlar</div>
+        </div>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
         <div className="mc-card p-6">
-          <h2 className="font-serif text-lg font-semibold text-ink">Tezkor amallar</h2>
-          <div className="mt-4 space-y-3">
-            <Button href="/admin/courses" size="sm" className="w-full">Fanlarni boshqarish</Button>
-            <Button href="/admin/courses" variant="secondary" size="sm" className="w-full">Yangi fan qo'shish</Button>
+          <h2 className="font-serif text-lg font-semibold text-ink mb-4">Tezkor amallar</h2>
+          <div className="space-y-3">
+            <Link href="/admin/courses" className="bg-brand text-sand rounded-xl px-4 py-3 text-sm font-semibold block text-center transition-colors hover:bg-brand-dark">Fanlarni boshqarish</Link>
           </div>
         </div>
         <div className="mc-card p-6">
-          <h2 className="font-serif text-lg font-semibold text-ink">Umumiy ma'lumot</h2>
-          <p className="mt-4 text-sm leading-relaxed text-ink-mute">
+          <h2 className="font-serif text-lg font-semibold text-ink mb-4">Umumiy ma'lumot</h2>
+          <p className="text-sm text-ink-mute leading-relaxed">
             Platformada {stats.courses} ta fan, {stats.users} ta foydalanuvchi va {stats.activities} ta faoliyat mavjud.
           </p>
         </div>

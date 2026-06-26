@@ -125,6 +125,45 @@ export const RotateCw = (p: IconProps) => (
 export const Upload = (p: IconProps) => (
   <Svg {...p}><path d="M12 16V4" /><path d="m7 9 5-5 5 5" /><path d="M5 20h14" /></Svg>
 )
+export const Bold = (p: IconProps) => (
+  <Svg {...p}><path d="M7 5h6a3.5 3.5 0 0 1 0 7H7z" /><path d="M7 12h7a3.5 3.5 0 0 1 0 7H7z" /></Svg>
+)
+export const Italic = (p: IconProps) => (
+  <Svg {...p}><path d="M19 5h-7" /><path d="M12 19H5" /><path d="m15 5-4 14" /></Svg>
+)
+export const Heading = (p: IconProps) => (
+  <Svg {...p}><path d="M6 5v14" /><path d="M18 5v14" /><path d="M6 12h12" /></Svg>
+)
+export const ListBullet = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M8 6h12" /><path d="M8 12h12" /><path d="M8 18h12" />
+    <path d="M4 6h.01" /><path d="M4 12h.01" /><path d="M4 18h.01" />
+  </Svg>
+)
+export const ListNumbered = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M10 6h11" /><path d="M10 12h11" /><path d="M10 18h11" />
+    <path d="M4 6h1v4" /><path d="M4 10h2" /><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" />
+  </Svg>
+)
+export const Quote = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M10 11H6a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v6c0 2-1 3-3 4" />
+    <path d="M19 11h-4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v6c0 2-1 3-3 4" />
+  </Svg>
+)
+export const LinkIcon = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+  </Svg>
+)
+export const Minus = (p: IconProps) => (
+  <Svg {...p}><path d="M5 12h14" /></Svg>
+)
+export const Eye = (p: IconProps) => (
+  <Svg {...p}><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" /><circle cx="12" cy="12" r="3" /></Svg>
+)
 
 /** Capsule logo mark used in the navbar / footer. */
 export function CapsuleMark({ className }: { className?: string }) {
