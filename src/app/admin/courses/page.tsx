@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Button } from '@/components/ui/Button'
+import { ArrowLeft, BookOpen, ChevronRight } from '@/components/ui/icons'
 
 export default function AdminCoursesPage() {
   const [session, setSession] = useState<any>(null)
@@ -21,43 +23,47 @@ export default function AdminCoursesPage() {
 
   if (!session || session.role !== 'admin') {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 text-center">
-        <div className="glass rounded-2xl p-10 inline-block">
-          <h2 className="font-bold text-red-500 mb-2">Ruxsat yo'q</h2>
-          <Link href="/" className="accent-bg rounded-xl px-5 py-2.5 text-sm font-bold inline-block mt-4">Bosh sahifa</Link>
+      <div className="relative z-[2] mx-auto max-w-shell px-5 py-20 text-center sm:px-10">
+        <div className="mc-card inline-block p-10">
+          <h2 className="font-serif text-xl font-semibold text-[#b3493d]">Ruxsat yo'q</h2>
+          <Button href="/" size="sm" className="mt-4">Bosh sahifa</Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-      <Link href="/admin" className="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-emerald-500 mb-4 flex items-center gap-1.5">
-        <i className="fa-solid fa-arrow-left"></i> Admin panel
+    <div className="relative z-[2] mx-auto max-w-shell px-5 py-12 sm:px-10">
+      <Link
+        href="/admin"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-mute transition-colors hover:text-brand"
+      >
+        <ArrowLeft className="h-4 w-4" /> Admin panel
       </Link>
 
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">Fanlarni boshqarish</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Fanlar va mavzularni tahrirlash, video yuklash.</p>
-        </div>
+      <div className="mt-8">
+        <span className="mc-label">Admin</span>
+        <h1 className="mt-2 font-serif text-[clamp(28px,3.4vw,40px)] font-semibold tracking-[-0.02em] text-ink">
+          Fanlarni boshqarish
+        </h1>
+        <p className="mt-1 text-sm text-ink-mute">Fanlar va mavzularni tahrirlash, video yuklash.</p>
       </div>
 
-      <div className="space-y-3">
+      <div className="mt-8 space-y-3">
         {courses.map((c: any) => (
           <Link
             key={c.id}
             href={`/admin/courses/${c.slug}`}
-            className="flex items-center gap-4 glass rounded-2xl p-4 hover:-translate-y-0.5 transition-all"
+            className="group flex items-center gap-4 rounded-2xl border border-[rgba(43,39,34,0.10)] bg-sand-card p-4 shadow-card transition-all hover:-translate-y-0.5 hover:border-brand-line hover:shadow-lift"
           >
-            <div className="h-12 w-12 rounded-xl accent-grad flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
-              <i className={`fa-solid ${c.icon || 'fa-book-medical'} text-white text-lg`}></i>
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-tint text-brand">
+              <BookOpen className="h-6 w-6" />
             </div>
-            <div className="flex-1 min-w-0">
-              <h3 className="font-extrabold text-gray-900 dark:text-white">{c.title}</h3>
-              <p className="text-xs text-gray-400">{c.totalTopics || 0} ta mavzu</p>
+            <div className="min-w-0 flex-1">
+              <h3 className="font-serif text-[19px] font-semibold text-ink">{c.title}</h3>
+              <p className="mt-0.5 font-mono text-[12px] text-ink-faint">{c.totalTopics || 0} ta mavzu</p>
             </div>
-            <i className="fa-solid fa-chevron-right text-gray-500"></i>
+            <ChevronRight className="h-5 w-5 text-ink-dim transition-colors group-hover:text-brand" />
           </Link>
         ))}
       </div>

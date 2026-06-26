@@ -4,17 +4,15 @@ interface CardProps {
   children: React.ReactNode
   className?: string
   hover?: boolean
-  glass?: boolean
 }
 
-export function Card({ children, className, hover, glass }: CardProps) {
+export function Card({ children, className, hover }: CardProps) {
   return (
     <div
       className={cn(
-        glass ? 'glass' : 'bg-white dark:bg-medCard border border-black/5 dark:border-white/10',
-        'rounded-2xl',
-        hover && 'hover:-translate-y-0.5 hover:shadow-lg hover:shadow-emerald-500/5 transition-all',
-        className
+        'rounded-2xl border border-[rgba(43,39,34,0.10)] bg-sand-card shadow-card',
+        hover && 'transition-all hover:-translate-y-0.5 hover:border-brand-line hover:shadow-lift',
+        className,
       )}
     >
       {children}

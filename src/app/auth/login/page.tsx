@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { CapsuleMark } from '@/components/ui/icons'
 
 function LoginForm() {
   const router = useRouter()
@@ -32,37 +33,37 @@ function LoginForm() {
       router.replace(redirect)
     } else {
       const data = await res.json()
-      setError(data.error || 'Login failed')
+      setError(data.error || 'Kirishda xatolik')
       setLoading(false)
     }
   }
 
   return (
-    <div className="min-h-[60vh] flex items-center justify-center px-4">
-      <div className="glass rounded-2xl w-full max-w-md p-8 animate-fade-up">
-        <div className="flex items-center gap-3 mb-6 justify-center">
-          <div className="h-10 w-10 rounded-xl accent-grad flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <i className="fa-solid fa-capsules text-white text-xl"></i>
-          </div>
-          <span className="text-gray-900 dark:text-white font-extrabold text-2xl tracking-tight">
-            Med<span className="text-emerald-500">Capsula</span>
+    <div className="relative z-[2] flex min-h-[70vh] items-center justify-center px-5 py-12">
+      <div className="w-full max-w-md animate-fade-up rounded-2xl border border-[rgba(43,39,34,0.1)] bg-sand-card p-8 shadow-card">
+        <div className="mb-6 flex items-center justify-center gap-2.5">
+          <CapsuleMark className="shadow-[0_1px_2px_rgba(43,39,34,0.12)]" />
+          <span className="font-serif text-2xl font-semibold tracking-[-0.01em] text-ink">
+            Med<span className="text-brand">Capsula</span>
           </span>
         </div>
-        <h1 className="text-lg font-extrabold text-gray-900 dark:text-white text-center mb-5">Tizimga kirish</h1>
+        <h1 className="mb-6 text-center font-serif text-2xl font-semibold text-ink">Tizimga kirish</h1>
         {error && (
-          <div className="bg-red-500/10 text-red-500 px-4 py-2 rounded-xl text-sm mb-4 border border-red-500/20">{error}</div>
+          <div className="mb-4 rounded-xl border border-[#e0c4be] bg-[#f4e3df] px-4 py-2.5 text-sm text-[#b3493d]">
+            {error}
+          </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-3">
           <Input id="email" name="email" type="email" placeholder="Email" required />
           <Input id="password" name="password" type="password" placeholder="Parol" required />
-          <Button type="submit" variant="accent" loading={loading} className="w-full">
+          <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full">
             Kirish
           </Button>
         </form>
-        <p className="text-sm text-gray-500 dark:text-gray-400 text-center mt-4">
-          Hisobingiz yo'qmi?{' '}
-          <Link href="/auth/register" className="text-emerald-500 hover:underline font-semibold">
-            Ro'yxatdan o'tish
+        <p className="mt-5 text-center text-sm text-ink-mute">
+          Hisobingiz yo&apos;qmi?{' '}
+          <Link href="/auth/register" className="font-semibold text-brand hover:underline">
+            Ro&apos;yxatdan o&apos;tish
           </Link>
         </p>
       </div>
@@ -72,16 +73,13 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="glass rounded-2xl p-8 text-center">
-          <div className="h-14 w-14 mx-auto rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-3">
-            <i className="fa-solid fa-spinner text-gray-400 text-xl animate-spin"></i>
-          </div>
-          <p className="text-sm text-gray-400">Yuklanmoqda...</p>
+    <Suspense
+      fallback={
+        <div className="relative z-[2] flex min-h-[70vh] items-center justify-center">
+          <p className="font-mono text-sm text-ink-faint">Yuklanmoqda…</p>
         </div>
-      </div>
-    }>
+      }
+    >
       <LoginForm />
     </Suspense>
   )

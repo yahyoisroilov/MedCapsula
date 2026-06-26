@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { Button } from '@/components/ui/Button'
+import { BookOpen, User, GraduationCap } from '@/components/ui/icons'
 
 export default function AdminPage() {
   const [session, setSession] = useState<any>(null)
@@ -33,68 +34,63 @@ export default function AdminPage() {
 
   if (!session || session.role !== 'admin') {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 text-center">
-        <div className="glass rounded-2xl p-10 inline-block">
-          <h2 className="font-bold text-red-500 mb-2">Ruxsat yo'q</h2>
-          <p className="text-sm text-gray-400">Faqat adminlar uchun.</p>
-          <Link href="/" className="accent-bg rounded-xl px-5 py-2.5 text-sm font-bold inline-block mt-4">
-            Bosh sahifa
-          </Link>
+      <div className="relative z-[2] mx-auto max-w-shell px-5 py-20 text-center sm:px-10">
+        <div className="mc-card inline-block p-10">
+          <h2 className="font-serif text-xl font-semibold text-[#b3493d]">Ruxsat yo'q</h2>
+          <p className="mt-2 text-sm text-ink-mute">Faqat adminlar uchun.</p>
+          <Button href="/" size="sm" className="mt-4">Bosh sahifa</Button>
         </div>
       </div>
     )
   }
 
+  const cards = [
+    { value: stats.courses, label: 'Fanlar', icon: <BookOpen className="h-5 w-5" />, tone: 'green' as const },
+    { value: stats.users, label: 'Foydalanuvchilar', icon: <User className="h-5 w-5" />, tone: 'blue' as const },
+    { value: stats.activities, label: 'Faoliyatlar', icon: <GraduationCap className="h-5 w-5" />, tone: 'green' as const },
+  ]
+
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">Admin panel</h1>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Fanlar va foydalanuvchilarni boshqarish.</p>
-        </div>
+    <div className="relative z-[2] mx-auto max-w-shell px-5 py-12 sm:px-10">
+      <div>
+        <span className="mc-label">Admin</span>
+        <h1 className="mt-2 font-serif text-[clamp(28px,3.4vw,40px)] font-semibold tracking-[-0.02em] text-ink">
+          Admin panel
+        </h1>
+        <p className="mt-1 text-sm text-ink-mute">Fanlar va foydalanuvchilarni boshqarish.</p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
-        <div className="glass rounded-2xl p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-10 w-10 rounded-xl accent-grad flex items-center justify-center shadow-md">
-              <i className="fa-solid fa-book text-white"></i>
+      <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        {cards.map(c => (
+          <div key={c.label} className="mc-card p-5">
+            <div className="flex items-center gap-3">
+              <div
+                className={`grid h-10 w-10 place-items-center rounded-xl ${
+                  c.tone === 'green' ? 'bg-brand-tint text-brand' : 'bg-sky-tint text-sky'
+                }`}
+              >
+                {c.icon}
+              </div>
+              <div className="font-serif text-[34px] font-semibold text-ink">{c.value}</div>
             </div>
-            <div className="text-3xl font-extrabold text-gray-900 dark:text-white">{stats.courses}</div>
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Fanlar</div>
-        </div>
-        <div className="glass rounded-2xl p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-10 w-10 rounded-xl bg-cyan-500/20 flex items-center justify-center shadow-md">
-              <i className="fa-solid fa-user text-cyan-400"></i>
+            <div className="mt-2 font-mono text-[12px] uppercase tracking-[0.04em] text-ink-faint">
+              {c.label}
             </div>
-            <div className="text-3xl font-extrabold text-gray-900 dark:text-white">{stats.users}</div>
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Foydalanuvchilar</div>
-        </div>
-        <div className="glass rounded-2xl p-5">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="h-10 w-10 rounded-xl bg-emerald-500/20 flex items-center justify-center shadow-md">
-              <i className="fa-solid fa-graduation-cap text-emerald-400"></i>
-            </div>
-            <div className="text-3xl font-extrabold text-gray-900 dark:text-white">{stats.activities}</div>
-          </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">Faoliyatlar</div>
-        </div>
+        ))}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        <div className="glass rounded-2xl p-6">
-          <h2 className="font-extrabold text-gray-900 dark:text-white mb-4">Tezkor amallar</h2>
-          <div className="space-y-3">
-            <Link href="/admin/courses" className="accent-bg rounded-xl px-4 py-3 text-sm font-bold block text-center">Fanlarni boshqarish</Link>
-            <Link href="/admin/courses" className="block text-center bg-gray-200 dark:bg-white/10 rounded-xl px-4 py-3 text-sm font-bold text-gray-800 dark:text-white">Yangi fan qo'shish</Link>
+      <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
+        <div className="mc-card p-6">
+          <h2 className="font-serif text-lg font-semibold text-ink">Tezkor amallar</h2>
+          <div className="mt-4 space-y-3">
+            <Button href="/admin/courses" size="sm" className="w-full">Fanlarni boshqarish</Button>
+            <Button href="/admin/courses" variant="secondary" size="sm" className="w-full">Yangi fan qo'shish</Button>
           </div>
         </div>
-        <div className="glass rounded-2xl p-6">
-          <h2 className="font-extrabold text-gray-900 dark:text-white mb-4">Umumiy ma'lumot</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+        <div className="mc-card p-6">
+          <h2 className="font-serif text-lg font-semibold text-ink">Umumiy ma'lumot</h2>
+          <p className="mt-4 text-sm leading-relaxed text-ink-mute">
             Platformada {stats.courses} ta fan, {stats.users} ta foydalanuvchi va {stats.activities} ta faoliyat mavjud.
           </p>
         </div>

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import { Button } from '@/components/ui/Button'
+import { ArrowLeft, BookOpen, Check, RotateCw, Info, Upload } from '@/components/ui/icons'
 
 export default function AdminCourseDetailPage({ params }: { params: { slug: string } }) {
   const [session, setSession] = useState<any>(null)
@@ -70,73 +72,82 @@ export default function AdminCourseDetailPage({ params }: { params: { slug: stri
 
   if (!session || session.role !== 'admin') {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 text-center">
-        <div className="glass rounded-2xl p-10 inline-block">
-          <h2 className="font-bold text-red-500 mb-2">Ruxsat yo'q</h2>
-          <Link href="/" className="accent-bg rounded-xl px-5 py-2.5 text-sm font-bold inline-block mt-4">Bosh sahifa</Link>
+      <div className="relative z-[2] mx-auto max-w-shell px-5 py-20 text-center sm:px-10">
+        <div className="mc-card inline-block p-10">
+          <h2 className="font-serif text-xl font-semibold text-[#b3493d]">Ruxsat yo'q</h2>
+          <Button href="/" size="sm" className="mt-4">Bosh sahifa</Button>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-      <Link href="/admin/courses" className="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-emerald-500 mb-4 flex items-center gap-1.5">
-        <i className="fa-solid fa-arrow-left"></i> Fanlar
+    <div className="relative z-[2] mx-auto max-w-shell px-5 py-12 sm:px-10">
+      <Link
+        href="/admin/courses"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-mute transition-colors hover:text-brand"
+      >
+        <ArrowLeft className="h-4 w-4" /> Fanlar
       </Link>
 
       {course && (
-        <div className="flex items-center gap-3 mb-6">
-          <div className="h-12 w-12 rounded-xl accent-grad flex items-center justify-center shadow-lg shadow-emerald-500/20 shrink-0">
-            <i className={`fa-solid ${course.icon || 'fa-book-medical'} text-white text-lg`}></i>
+        <div className="mt-8 flex items-center gap-4">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-brand-tint text-brand">
+            <BookOpen className="h-6 w-6" />
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-gray-900 dark:text-white">{course.title}</h1>
-            <p className="text-xs text-gray-400">{lessons.length} ta mavzu</p>
+            <h1 className="font-serif text-[clamp(28px,3.4vw,40px)] font-semibold tracking-[-0.02em] text-ink">
+              {course.title}
+            </h1>
+            <p className="mt-1 font-mono text-[12px] uppercase tracking-[0.04em] text-ink-faint">
+              {lessons.length} ta mavzu
+            </p>
           </div>
         </div>
       )}
 
-      <div className="space-y-4">
+      <div className="mt-8 space-y-4">
         {lessons.map((lesson, idx) => (
-          <div key={lesson.id} className="glass rounded-2xl p-5">
-            <div className="flex items-center gap-3 mb-4">
-              <span className="h-8 w-8 rounded-lg accent-bg flex items-center justify-center text-sm font-bold shrink-0">{idx + 1}</span>
-              <h3 className="font-bold text-gray-900 dark:text-white">{lesson.title}</h3>
+          <div key={lesson.id} className="mc-card p-5">
+            <div className="mb-4 flex items-center gap-3">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-brand font-mono text-sm font-bold text-sand">
+                {idx + 1}
+              </span>
+              <h3 className="font-serif text-lg font-semibold text-ink">{lesson.title}</h3>
             </div>
 
             <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Video URL (YouTube embed link)</label>
-                    <div className="flex gap-2">
-                      <input
-                        value={lesson.video_url || ''}
-                        onChange={e => {
-                          const newUrl = e.target.value
-                          setLessons(prev => prev.map((l, i) =>
-                            i === idx ? { ...l, video_url: newUrl } : l
-                          ))
-                        }}
-                        onBlur={e => handleUrlSave(idx, e.target.value)}
-                        placeholder="https://www.youtube.com/embed/..."
-                        className="flex-1 bg-gray-100 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:border-emerald-500"
-                      />
-                      {urlStatus[idx] === 'saving' && (
-                        <span className="text-xs text-blue-500 flex items-center"><i className="fa-solid fa-spinner animate-spin"></i></span>
-                      )}
-                      {urlStatus[idx] === 'ok' && (
-                        <span className="text-xs text-emerald-500 flex items-center"><i className="fa-solid fa-check"></i></span>
-                      )}
-                      {urlStatus[idx] === 'error' && (
-                        <span className="text-xs text-red-500 flex items-center" title="Saqlashda xatolik"><i className="fa-solid fa-triangle-exclamation"></i></span>
-                      )}
-                    </div>
-                  </div>
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold text-ink-soft">Video URL (YouTube embed link)</label>
+                <div className="flex gap-2">
+                  <input
+                    value={lesson.video_url || ''}
+                    onChange={e => {
+                      const newUrl = e.target.value
+                      setLessons(prev => prev.map((l, i) =>
+                        i === idx ? { ...l, video_url: newUrl } : l
+                      ))
+                    }}
+                    onBlur={e => handleUrlSave(idx, e.target.value)}
+                    placeholder="https://www.youtube.com/embed/..."
+                    className="flex-1 rounded-xl border border-[rgba(43,39,34,0.16)] bg-sand-card px-4 py-2.5 text-sm text-ink placeholder-ink-dim transition-colors focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15"
+                  />
+                  {urlStatus[idx] === 'saving' && (
+                    <span className="flex items-center text-sky"><RotateCw className="h-4 w-4 animate-spin" /></span>
+                  )}
+                  {urlStatus[idx] === 'ok' && (
+                    <span className="flex items-center text-brand"><Check className="h-4 w-4" /></span>
+                  )}
+                  {urlStatus[idx] === 'error' && (
+                    <span className="flex items-center text-[#b3493d]" title="Saqlashda xatolik"><Info className="h-4 w-4" /></span>
+                  )}
+                </div>
+              </div>
 
               <div>
-                <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5">Yoki video fayl yuklash</label>
-                <label className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-200 dark:bg-white/10 text-sm font-bold text-gray-800 dark:text-white cursor-pointer hover:opacity-90">
-                  <i className="fa-solid fa-upload"></i>
+                <label className="mb-1.5 block text-sm font-semibold text-ink-soft">Yoki video fayl yuklash</label>
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-[rgba(43,39,34,0.16)] bg-sand-card px-4 py-2.5 text-sm font-semibold text-ink shadow-[0_1px_2px_rgba(43,39,34,0.05)] transition-colors hover:bg-white">
+                  <Upload className="h-[18px] w-[18px]" />
                   {uploading === `lesson-${idx}` ? 'Yuklanmoqda...' : 'Fayl tanlash'}
                   <input
                     type="file"
@@ -150,7 +161,9 @@ export default function AdminCourseDetailPage({ params }: { params: { slug: stri
                   />
                 </label>
                 {lesson.video_url && (
-                  <span className="ml-3 text-xs text-emerald-500">&#10003; Video mavjud</span>
+                  <span className="ml-3 inline-flex items-center gap-1 text-xs font-semibold text-brand">
+                    <Check className="h-4 w-4" /> Video mavjud
+                  </span>
                 )}
               </div>
             </div>

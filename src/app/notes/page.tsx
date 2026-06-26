@@ -1,36 +1,23 @@
-'use client'
-
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { NotesEditor } from '@/components/subjects/NotesEditor'
+import { createClient } from '@/lib/supabase/server'
+import { getSubjects } from '@/lib/subjects'
+import { NotesApp } from '@/components/notes/NotesApp'
 
-export default function NotesPage() {
-  const [session, setSession] = useState<any>(null)
-  const [courses, setCourses] = useState<any[]>([])
-  const [selectedCourseId, setSelectedCourseId] = useState('')
+export const dynamic = 'force-dynamic'
 
-  useEffect(() => {
-    fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
-      .then(setSession)
-  }, [])
+export default async function NotesPage() {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
-  useEffect(() => {
-    fetch('/api/courses')
-      .then(r => r.json())
-      .then((data) => {
-        setCourses(data)
-        if (data.length > 0) setSelectedCourseId(data[0].id)
-      })
-  }, [])
-
-  if (!session) {
+  if (!user) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-20 text-center">
-        <div className="glass rounded-2xl p-10 inline-block">
-          <h2 className="font-bold text-gray-700 dark:text-gray-200 mb-2">Kirish talab qilinadi</h2>
-          <p className="text-sm text-gray-400">Iltimos, tizimga kiring yoki ro'yxatdan o'ting.</p>
-          <Link href="/auth/login?redirect=/notes" className="accent-bg rounded-xl px-5 py-2.5 text-sm font-bold inline-block mt-4">
+      <div className="relative z-[2] mx-auto max-w-shell px-5 py-24 text-center sm:px-10">
+        <div className="mx-auto inline-block rounded-2xl border border-[rgba(43,39,34,0.1)] bg-sand-card p-10 shadow-card">
+          <h2 className="font-serif text-2xl font-semibold text-ink">Kirish talab qilinadi</h2>
+          <p className="mt-2 text-sm text-ink-mute">Qaydlar uchun tizimga kiring yoki ro‘yxatdan o‘ting.</p>
+          <Link href="/auth/login?redirect=/notes" className="btn-sm mx-auto mt-5">
             Kirish
           </Link>
         </div>
@@ -38,63 +25,8 @@ export default function NotesPage() {
     )
   }
 
-  const selectedCourse = courses.find((c: any) => c.id === selectedCourseId) || courses[0]
+  const subjects = await getSubjects()
+  const subjectNames = subjects.map(s => s.title)
 
-  return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 py-6">
-      <div className="mb-6">
-        <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 dark:text-white">Qaydlar</h2>
-        <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-          Har bir fan uchun shaxsiy qaydlaringizni yozing va saqlang.
-        </p>
-      </div>
-
-      {courses.length === 0 ? (
-        <div className="glass rounded-2xl p-10 text-center">
-          <p className="text-gray-400">Hozircha fanlar yo'q.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-5">
-          <aside className="hidden md:block glass rounded-2xl p-3 space-y-1 h-fit sticky top-24">
-            {courses.map((c: any) => (
-              <button
-                key={c.id}
-                onClick={() => setSelectedCourseId(c.id)}
-                className={`w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold flex items-center gap-2 transition-all ${
-                  c.id === selectedCourseId
-                    ? 'accent-bg'
-                    : 'hover:bg-gray-200/60 dark:hover:bg-white/5 text-gray-600 dark:text-gray-300'
-                }`}
-              >
-                <i className={`fa-solid ${c.icon || 'fa-book-medical'} text-xs ${c.id === selectedCourseId ? 'text-white' : 'text-gray-400'}`}></i>
-                <span className="truncate">{c.title}</span>
-              </button>
-            ))}
-          </aside>
-
-          <div className="md:hidden mb-4">
-            <select
-              value={selectedCourseId}
-              onChange={e => setSelectedCourseId(e.target.value)}
-              className="w-full glass rounded-xl px-4 py-3 text-sm font-semibold text-gray-900 dark:text-white focus:outline-none"
-            >
-              {courses.map((c: any) => (
-                <option key={c.id} value={c.id}>{c.title}</option>
-              ))}
-            </select>
-          </div>
-
-          <div className="glass rounded-2xl p-5">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="h-9 w-9 rounded-lg accent-grad flex items-center justify-center shrink-0">
-                <i className={`fa-solid ${selectedCourse?.icon || 'fa-book-medical'} text-white text-sm`}></i>
-              </div>
-              <h3 className="font-extrabold text-gray-900 dark:text-white">{selectedCourse?.title}</h3>
-            </div>
-            {selectedCourseId && <NotesEditor courseId={selectedCourseId} />}
-          </div>
-        </div>
-      )}
-    </div>
-  )
+  return <NotesApp subjects={subjectNames} />
 }

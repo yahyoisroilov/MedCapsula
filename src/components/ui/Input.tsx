@@ -9,20 +9,20 @@ export function Input({ label, error, className, id, ...props }: InputProps) {
   return (
     <div>
       {label && (
-        <label htmlFor={id} className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+        <label htmlFor={id} className="mb-1.5 block text-sm font-semibold text-ink-soft">
           {label}
         </label>
       )}
       <input
         id={id}
         className={cn(
-          'w-full bg-gray-100 dark:bg-white/5 border border-black/5 dark:border-white/10 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:border-emerald-500 transition-colors',
-          error && 'border-red-500 focus:border-red-500',
-          className
+          'w-full rounded-xl border border-[rgba(43,39,34,0.16)] bg-sand-card px-4 py-2.5 text-sm text-ink placeholder-ink-dim transition-colors focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/15',
+          error && 'border-[#b3493d] focus:border-[#b3493d] focus:ring-[#b3493d]/15',
+          className,
         )}
         {...props}
       />
-      {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
+      {error && <p className="mt-1 text-xs text-[#b3493d]">{error}</p>}
     </div>
   )
 }

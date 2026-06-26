@@ -2,6 +2,16 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
+import {
+  Play,
+  FileText,
+  ClipboardCheck,
+  Check,
+  ArrowRight,
+  ArrowLeft,
+  Trophy,
+  RotateCw,
+} from '@/components/ui/icons'
 
 interface QuizQuestion {
   q: string
@@ -17,7 +27,7 @@ interface StepFlowProps {
     description: string | null
     videoUrl: string | null
     notesContent: string | null
-    quiz: string | null
+    quiz: unknown
     duration: number | null
   }
   courseId: string
@@ -27,15 +37,38 @@ interface StepFlowProps {
 }
 
 const steps = [
-  { n: 1, label: 'Video', icon: 'fa-play' },
-  { n: 2, label: "O'qish", icon: 'fa-book-open' },
-  { n: 3, label: 'Test', icon: 'fa-list-check' },
+  { n: 1, label: 'Videodars', Icon: Play },
+  { n: 2, label: 'Konspekt', Icon: FileText },
+  { n: 3, label: 'Test', Icon: ClipboardCheck },
 ]
 
 function completedCount(step: string | number): number {
   if (step === 'done') return 3
   const s = typeof step === 'string' ? parseInt(step) || 0 : step
   return Math.min(s, 3)
+}
+
+function parseQuiz(raw: unknown): QuizQuestion[] {
+  if (!raw) return []
+  if (Array.isArray(raw)) return raw as QuizQuestion[]
+  if (typeof raw === 'string') {
+    try {
+      const p = JSON.parse(raw)
+      return Array.isArray(p) ? p : []
+    } catch {
+      return []
+    }
+  }
+  return []
+}
+
+function EmptyState({ title, sub }: { title: string; sub: string }) {
+  return (
+    <div className="mc-card p-12 text-center">
+      <h3 className="font-serif text-xl text-ink-mute">{title}</h3>
+      <p className="mt-1.5 text-sm text-ink-faint">{sub}</p>
+    </div>
+  )
 }
 
 export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: StepFlowProps) {
@@ -51,22 +84,25 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
     finished: boolean
   } | null>(null)
 
-  const saveProgress = useCallback(async (step: string | number) => {
-    try {
-      await fetch('/api/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ courseId, lessonIndex, step: String(step) }),
-      })
-      setCompleted(completedCount(step))
-    } catch (e) {
-      console.error('saveProgress', e)
-    }
-  }, [courseId, lessonIndex])
+  const saveProgress = useCallback(
+    async (step: string | number) => {
+      try {
+        await fetch('/api/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ courseId, lessonIndex, step: String(step) }),
+        })
+        setCompleted(completedCount(step))
+      } catch (e) {
+        console.error('saveProgress', e)
+      }
+    },
+    [courseId, lessonIndex],
+  )
 
   useEffect(() => {
     if (topicStep === 2) {
-      setQuizState({ idx: 0, score: 0, selected: null, finished: false })
+      setQuizState(prev => prev ?? { idx: 0, score: 0, selected: null, finished: false })
     }
   }, [topicStep])
 
@@ -76,9 +112,7 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
     if (step === 2) next = 'done'
     else next = Math.max(typeof cur === 'number' ? cur : 0, step + 1)
 
-    if (cur !== 'done') {
-      await saveProgress(next)
-    }
+    if (cur !== 'done') await saveProgress(next)
     if (step < 2) {
       setTopicStep(step + 1)
       if (step + 1 === 2 && !quizState) {
@@ -87,141 +121,136 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
     }
   }
 
-  const questions: QuizQuestion[] = (() => {
-    try {
-      return JSON.parse(lesson.quiz || '[]')
-    } catch { return [] }
-  })()
+  const questions = parseQuiz(lesson.quiz)
+  const isYouTube =
+    lesson.videoUrl &&
+    (lesson.videoUrl.includes('youtube.com') || lesson.videoUrl.includes('youtu.be'))
 
   return (
     <div>
-      <div className="flex items-center gap-2 sm:gap-3 mb-6">
+      {/* Stepper */}
+      <div className="mb-8 flex items-center gap-2 sm:gap-3">
         {steps.map((st, idx) => {
           const done = idx < completed
           const active = idx === topicStep
-          const dotCls = active
-            ? 'accent-bg text-white shadow-md shadow-emerald-500/30'
-            : done
-            ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-            : 'bg-gray-200 dark:bg-white/5 text-gray-400'
           return (
-            <button
-              key={st.n}
-              onClick={() => {
-                if (idx <= completed) setTopicStep(idx)
-              }}
-              className="flex items-center gap-2 shrink-0"
-            >
-              <span className={cn('h-9 w-9 rounded-full flex items-center justify-center text-sm font-bold transition-all', dotCls)}>
-                {done && !active
-                  ? <i className="fa-solid fa-check"></i>
-                  : <i className={`fa-solid ${st.icon}`}></i>
-                }
-              </span>
-              <span className={cn('hidden sm:inline text-xs font-bold', active ? 'accent-text' : 'text-gray-400')}>
-                {st.n}. {st.label}
-              </span>
-            </button>
+            <div key={st.n} className="flex flex-1 items-center gap-2 sm:gap-3">
+              <button
+                onClick={() => {
+                  if (idx <= completed) setTopicStep(idx)
+                }}
+                className="flex items-center gap-2.5"
+              >
+                <span
+                  className={cn(
+                    'grid h-10 w-10 place-items-center rounded-full transition-all',
+                    active
+                      ? 'bg-brand text-sand shadow-btn-sm'
+                      : done
+                        ? 'bg-brand-tint text-brand'
+                        : 'bg-[rgba(43,39,34,0.05)] text-ink-faint',
+                  )}
+                >
+                  {done && !active ? <Check className="h-5 w-5" /> : <st.Icon className="h-5 w-5" />}
+                </span>
+                <span
+                  className={cn(
+                    'hidden font-mono text-[12px] uppercase tracking-[0.04em] sm:inline',
+                    active ? 'text-brand' : 'text-ink-faint',
+                  )}
+                >
+                  {st.label}
+                </span>
+              </button>
+              {idx < steps.length - 1 && (
+                <span
+                  className={cn(
+                    'h-px flex-1 transition-colors',
+                    idx < completed ? 'bg-brand/40' : 'bg-[rgba(43,39,34,0.12)]',
+                  )}
+                />
+              )}
+            </div>
           )
         })}
       </div>
 
       <div className="animate-slide-in">
+        {/* ── Step 0 · Video ── */}
         {topicStep === 0 && (
           <div>
             {lesson.videoUrl ? (
-              lesson.videoUrl.includes('youtube.com') || lesson.videoUrl.includes('youtu.be') ? (
-                <div className="relative w-full rounded-2xl overflow-hidden glass" style={{ aspectRatio: '16/9' }}>
+              <div
+                className="relative w-full overflow-hidden rounded-2xl border border-[rgba(43,39,34,0.1)] bg-black"
+                style={{ aspectRatio: '16/9' }}
+              >
+                {isYouTube ? (
                   <iframe
-                    className="absolute inset-0 w-full h-full"
+                    className="absolute inset-0 h-full w-full"
                     src={lesson.videoUrl}
                     title={lesson.title}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                   />
-                </div>
-              ) : (
-                <div className="relative w-full rounded-2xl overflow-hidden glass" style={{ aspectRatio: '16/9' }}>
-                  <video
-                    className="absolute inset-0 w-full h-full"
-                    src={lesson.videoUrl}
-                    controls
-                    playsInline
-                  />
-                </div>
-              )
-            ) : (
-              <div className="glass rounded-2xl p-10 text-center">
-                <div className="h-14 w-14 mx-auto rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-3">
-                  <i className="fa-solid fa-video-slash text-gray-400 text-xl"></i>
-                </div>
-                <h3 className="font-bold text-gray-700 dark:text-gray-200">Video hali qo'shilmagan</h3>
-                <p className="text-xs text-gray-400 mt-1">Bu mavzu uchun video keyinroq qo'shiladi.</p>
+                ) : (
+                  <video className="absolute inset-0 h-full w-full" src={lesson.videoUrl} controls playsInline />
+                )}
               </div>
+            ) : (
+              <EmptyState title="Video hali qo‘shilmagan" sub="Bu mavzu uchun video keyinroq qo‘shiladi." />
             )}
-            <div className="flex justify-end mt-5">
-              <button
-                onClick={() => completeStep(0)}
-                className="accent-bg rounded-xl px-5 py-3 text-sm font-bold flex items-center gap-2 hover:opacity-90 transition"
-              >
-                Videoni ko'rdim — Davom etish <i className="fa-solid fa-arrow-right"></i>
+            <div className="mt-6 flex justify-end">
+              <button onClick={() => completeStep(0)} className="btn-sm px-5 py-3">
+                Videoni ko‘rdim — Davom etish <ArrowRight className="h-[18px] w-[18px]" />
               </button>
             </div>
           </div>
         )}
 
+        {/* ── Step 1 · Konspekt ── */}
         {topicStep === 1 && (
           <div>
             {lesson.notesContent ? (
-              <div className="glass rounded-2xl p-6 leading-relaxed text-[15px] text-gray-700 dark:text-gray-300">
-                <div className="flex items-center gap-2 mb-3 text-emerald-600 dark:text-emerald-400 font-bold text-sm">
-                  <i className="fa-solid fa-book-open"></i> Konspekt
+              <div className="mc-card p-7">
+                <div className="mb-4 flex items-center gap-2 font-mono text-[12px] uppercase tracking-[0.06em] text-brand-soft">
+                  <FileText className="h-4 w-4 text-brand" /> Konspekt
                 </div>
-                <div className="whitespace-pre-wrap">{lesson.notesContent}</div>
+                <div className="whitespace-pre-wrap text-[16.5px] leading-[1.7] text-ink-soft">
+                  {lesson.notesContent}
+                </div>
               </div>
             ) : (
-              <div className="glass rounded-2xl p-10 text-center">
-                <div className="h-14 w-14 mx-auto rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-3">
-                  <i className="fa-solid fa-file-circle-xmark text-gray-400 text-xl"></i>
-                </div>
-                <h3 className="font-bold text-gray-700 dark:text-gray-200">Konspekt hali yo'q</h3>
-                <p className="text-xs text-gray-400 mt-1">Bu mavzu uchun matn keyinroq qo'shiladi.</p>
-              </div>
+              <EmptyState title="Konspekt hali yo‘q" sub="Bu mavzu uchun matn keyinroq qo‘shiladi." />
             )}
-            <div className="flex items-center justify-between mt-5">
+            <div className="mt-6 flex items-center justify-between">
               <button
                 onClick={() => setTopicStep(0)}
-                className="text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-emerald-500 flex items-center gap-1.5"
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-mute hover:text-brand"
               >
-                <i className="fa-solid fa-arrow-left"></i> Video
+                <ArrowLeft className="h-4 w-4" /> Videodars
               </button>
-              <button
-                onClick={() => completeStep(1)}
-                className="accent-bg rounded-xl px-5 py-3 text-sm font-bold flex items-center gap-2 hover:opacity-90 transition"
-              >
-                O'qib chiqdim — Davom etish <i className="fa-solid fa-arrow-right"></i>
+              <button onClick={() => completeStep(1)} className="btn-sm px-5 py-3">
+                O‘qib chiqdim — Davom etish <ArrowRight className="h-[18px] w-[18px]" />
               </button>
             </div>
           </div>
         )}
 
+        {/* ── Step 2 · Test ── */}
         {topicStep === 2 && (
           <div>
             {questions.length === 0 ? (
               <div>
-                <div className="glass rounded-2xl p-10 text-center">
-                  <div className="h-14 w-14 mx-auto rounded-full bg-gray-100 dark:bg-white/5 flex items-center justify-center mb-3">
-                    <i className="fa-solid fa-clipboard-question text-gray-400 text-xl"></i>
-                  </div>
-                  <h3 className="font-bold text-gray-700 dark:text-gray-200">Test hali yo'q</h3>
-                  <p className="text-xs text-gray-400 mt-1">Bu mavzu uchun savollar keyinroq qo'shiladi.</p>
-                </div>
-                <div className="flex items-center justify-between mt-5">
-                  <button onClick={() => setTopicStep(1)} className="text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-emerald-500 flex items-center gap-1.5">
-                    <i className="fa-solid fa-arrow-left"></i> O'qish
+                <EmptyState title="Test hali yo‘q" sub="Bu mavzu uchun savollar keyinroq qo‘shiladi." />
+                <div className="mt-6 flex items-center justify-between">
+                  <button
+                    onClick={() => setTopicStep(1)}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-mute hover:text-brand"
+                  >
+                    <ArrowLeft className="h-4 w-4" /> Konspekt
                   </button>
-                  <button onClick={() => completeStep(2)} className="accent-bg rounded-xl px-5 py-3 text-sm font-bold flex items-center gap-2">
-                    <i className="fa-solid fa-check"></i> Mavzuni yakunlash
+                  <button onClick={() => completeStep(2)} className="btn-sm px-5 py-3">
+                    <Check className="h-[18px] w-[18px]" /> Mavzuni yakunlash
                   </button>
                 </div>
               </div>
@@ -232,8 +261,6 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
                 setQuizState={setQuizState}
                 onFinish={() => completeStep(2)}
                 onBack={() => setTopicStep(1)}
-                slug={slug}
-                lessonIndex={lessonIndex}
               />
             )}
           </div>
@@ -252,30 +279,30 @@ function QuizContent({
 }: {
   questions: QuizQuestion[]
   quizState: { idx: number; score: number; selected: number | null; finished: boolean }
-  setQuizState: (s: any) => void
+  setQuizState: (s: { idx: number; score: number; selected: number | null; finished: boolean }) => void
   onFinish: () => void
   onBack: () => void
-  slug: string
-  lessonIndex: number
 }) {
   if (quizState.finished) {
     const pct = questions.length > 0 ? Math.round((quizState.score / questions.length) * 100) : 0
     return (
-      <div className="glass rounded-2xl p-8 text-center">
-        <div className="h-16 w-16 mx-auto rounded-full accent-grad flex items-center justify-center mb-4 shadow-lg shadow-emerald-500/30">
-          <i className="fa-solid fa-trophy text-white text-2xl"></i>
+      <div className="mc-card p-10 text-center">
+        <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full bg-brand text-sand shadow-btn-sm">
+          <Trophy className="h-7 w-7" />
         </div>
-        <h3 className="text-2xl font-extrabold text-gray-900 dark:text-white">{quizState.score} / {questions.length}</h3>
-        <p className="text-sm text-gray-400 mt-1">{pct}% to'g'ri javob</p>
-        <div className="flex items-center justify-center gap-3 mt-6">
+        <h3 className="font-serif text-3xl font-semibold text-ink">
+          {quizState.score} / {questions.length}
+        </h3>
+        <p className="mt-1 text-sm text-ink-faint">{pct}% to‘g‘ri javob</p>
+        <div className="mt-6 flex items-center justify-center gap-3">
           <button
             onClick={() => setQuizState({ idx: 0, score: 0, selected: null, finished: false })}
-            className="bg-gray-200 dark:bg-white/10 text-gray-800 dark:text-white rounded-xl px-5 py-2.5 text-sm font-bold hover:opacity-90"
+            className="btn-secondary px-5 py-2.5 text-sm"
           >
-            <i className="fa-solid fa-rotate-right mr-1.5"></i> Qayta urinish
+            <RotateCw className="h-4 w-4" /> Qayta urinish
           </button>
-          <button onClick={onFinish} className="accent-bg rounded-xl px-5 py-2.5 text-sm font-bold">
-            <i className="fa-solid fa-check mr-1.5"></i> Tugatish
+          <button onClick={onFinish} className="btn-sm px-5 py-2.5">
+            <Check className="h-4 w-4" /> Tugatish
           </button>
         </div>
       </div>
@@ -287,26 +314,26 @@ function QuizContent({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-bold text-gray-400">Savol {quizState.idx + 1} / {questions.length}</span>
-        <div className="h-1.5 w-32 rounded-full bg-gray-200 dark:bg-white/10 overflow-hidden">
-          <div className="h-full accent-grad" style={{ width: `${((quizState.idx) / questions.length) * 100}%` }} />
+      <div className="mb-4 flex items-center justify-between">
+        <span className="font-mono text-[12px] uppercase tracking-[0.04em] text-ink-faint">
+          Savol {quizState.idx + 1} / {questions.length}
+        </span>
+        <div className="h-1.5 w-32 overflow-hidden rounded-full bg-[rgba(43,39,34,0.1)]">
+          <div className="h-full bg-brand" style={{ width: `${(quizState.idx / questions.length) * 100}%` }} />
         </div>
       </div>
-      <div className="glass rounded-2xl p-5 mb-4">
-        <h3 className="font-bold text-gray-900 dark:text-white text-[15px] leading-snug">{q.q}</h3>
+
+      <div className="mc-card mb-4 p-6">
+        <h3 className="font-serif text-[20px] font-semibold leading-snug text-ink">{q.q}</h3>
       </div>
+
       <div className="space-y-2.5">
         {q.a.map((opt, oi) => {
-          let cls = 'glass hover:border-emerald-500/40'
+          let cls = 'border-[rgba(43,39,34,0.12)] bg-sand-card hover:border-brand-line'
           if (answered) {
-            if (oi === q.correct) {
-              cls = 'border-2 border-emerald-500 bg-emerald-500/10'
-            } else if (oi === quizState.selected) {
-              cls = 'border-2 border-red-500 bg-red-500/10'
-            } else {
-              cls = 'glass opacity-60'
-            }
+            if (oi === q.correct) cls = 'border-brand bg-brand-tint'
+            else if (oi === quizState.selected) cls = 'border-[#cf9a90] bg-[#f4e3df]'
+            else cls = 'border-[rgba(43,39,34,0.1)] bg-sand-card opacity-60'
           }
           return (
             <button
@@ -318,17 +345,26 @@ function QuizContent({
                 if (oi === q.correct) newState.score++
                 setQuizState(newState)
               }}
-              className={`w-full text-left rounded-xl px-4 py-3.5 text-sm font-medium text-gray-800 dark:text-gray-200 flex items-center justify-between gap-3 transition-all ${cls}`}
+              className={cn(
+                'flex w-full items-center justify-between gap-3 rounded-xl border px-4 py-3.5 text-left text-[15px] text-ink transition-all',
+                cls,
+              )}
             >
               <span>{opt}</span>
-              {answered && oi === q.correct && <i className="fa-solid fa-check text-emerald-500"></i>}
-              {answered && oi === quizState.selected && oi !== q.correct && <i className="fa-solid fa-xmark text-red-500"></i>}
+              {answered && oi === q.correct && <Check className="h-5 w-5 text-brand" />}
             </button>
           )
         })}
       </div>
+
+      {answered && q.exp && (
+        <div className="mt-4 flex items-start gap-3 rounded-xl border border-brand-line bg-brand-tint px-4 py-3.5 text-[15px] leading-relaxed text-[#2c5e46]">
+          {q.exp}
+        </div>
+      )}
+
       {answered && (
-        <div className="flex justify-end mt-5">
+        <div className="mt-6 flex justify-end">
           <button
             onClick={() => {
               if (quizState.idx + 1 < questions.length) {
@@ -337,16 +373,20 @@ function QuizContent({
                 setQuizState({ ...quizState, finished: true })
               }
             }}
-            className="accent-bg rounded-xl px-5 py-3 text-sm font-bold flex items-center gap-2"
+            className="btn-sm px-5 py-3"
           >
             {quizState.idx + 1 < questions.length ? 'Keyingi savol' : 'Yakunlash'}
-            <i className="fa-solid fa-arrow-right"></i>
+            <ArrowRight className="h-[18px] w-[18px]" />
           </button>
         </div>
       )}
-      <div className="mt-5">
-        <button onClick={onBack} className="text-sm font-bold text-gray-500 dark:text-gray-400 hover:text-emerald-500 flex items-center gap-1.5">
-          <i className="fa-solid fa-arrow-left"></i> O'qish
+
+      <div className="mt-6">
+        <button
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-mute hover:text-brand"
+        >
+          <ArrowLeft className="h-4 w-4" /> Konspekt
         </button>
       </div>
     </div>

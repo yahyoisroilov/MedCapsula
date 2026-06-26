@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect } from 'react'
 import { cn } from '@/lib/utils'
+import { CapsuleMark, Menu, X, ArrowRight, Shield, LogOut } from '@/components/ui/icons'
 
 type NavSession = {
   id: string
@@ -12,177 +13,166 @@ type NavSession = {
   role: string
 } | null
 
+const tabs = [
+  { href: '/subjects', label: 'Fanlar' },
+  { href: '/notes', label: 'Qaydlar' },
+]
+
 export function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const [session, setSession] = useState<NavSession>(null)
-  const [mobileOpen, setMobileOpen] = useState(false)
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     fetch('/api/auth/me')
-      .then(r => r.ok ? r.json() : null)
+      .then(r => (r.ok ? r.json() : null))
       .then(setSession)
       .catch(() => setSession(null))
-  }, [])
+  }, [pathname])
 
-  const isActive = (href: string) => {
-    if (href === '/') return pathname === '/' || pathname.startsWith('/subjects')
-    return pathname === href || pathname.startsWith(href + '/')
-  }
-
-  const tabs = [
-    { id: 'fanlar', href: '/', label: 'Fanlar', icon: 'fa-graduation-cap' },
-    { id: 'qaydlar', href: '/notes', label: 'Qaydlar', icon: 'fa-note-sticky' },
-  ]
+  const isActive = (href: string) =>
+    pathname === href || pathname.startsWith(href + '/')
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' })
+    setSession(null)
+    setOpen(false)
     router.push('/')
+    router.refresh()
   }
 
   return (
-    <nav className="sticky top-0 z-40 glass border-b border-black/5 dark:border-white/5 px-4 sm:px-6 py-3">
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-3">
-        <Link href="/" className="flex items-center space-x-3 shrink-0">
-          <div className="h-10 w-10 rounded-xl accent-grad flex items-center justify-center shadow-lg shadow-emerald-500/20">
-            <i className="fa-solid fa-capsules text-white text-xl"></i>
-          </div>
-          <span className="text-gray-900 dark:text-white font-extrabold text-xl sm:text-2xl tracking-tight">
-            Med<span className="text-emerald-500">Capsula</span>
+    <header className="sticky top-0 z-30 border-b border-[rgba(43,39,34,0.10)] bg-[rgba(245,240,230,0.82)] backdrop-blur-md">
+      <div className="mx-auto flex max-w-shell items-center justify-between gap-4 px-5 py-4 sm:px-10">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2.5 shrink-0">
+          <CapsuleMark className="shadow-[0_1px_2px_rgba(43,39,34,0.12)]" />
+          <span className="font-serif text-xl font-semibold tracking-[-0.01em] text-ink">
+            Med<span className="text-brand">Capsula</span>
           </span>
         </Link>
 
-        <div className="flex items-center gap-2">
-          <div className="hidden md:flex items-center gap-2 mr-2">
-            {tabs.map(tab => (
+        {/* Desktop nav */}
+        <nav className="hidden items-center gap-7 md:flex">
+          {tabs.map(t => (
+            <Link
+              key={t.href}
+              href={t.href}
+              className={cn(
+                'text-[15px] transition-colors',
+                isActive(t.href)
+                  ? 'font-semibold text-brand'
+                  : 'text-ink-mute hover:text-ink',
+              )}
+            >
+              {t.label}
+            </Link>
+          ))}
+
+          <span className="h-[18px] w-px bg-[rgba(43,39,34,0.15)]" />
+
+          {session ? (
+            <div className="flex items-center gap-3">
+              {session.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  className="inline-flex items-center gap-1.5 text-[15px] font-medium text-ink-mute hover:text-ink"
+                >
+                  <Shield className="h-4 w-4 text-sky" /> Admin
+                </Link>
+              )}
               <Link
-                key={tab.id}
-                href={tab.href}
+                href="/dashboard"
+                className="inline-flex items-center gap-2.5 rounded-full bg-brand py-2 pl-2 pr-3.5 text-sm font-semibold text-sand shadow-btn-sm hover:bg-brand-dark"
+              >
+                <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-tint font-serif text-[13px] text-brand">
+                  {(session.name || 'U').charAt(0).toUpperCase()}
+                </span>
+                Profil
+              </Link>
+              <button
+                onClick={handleLogout}
+                title="Chiqish"
+                className="text-ink-faint transition-colors hover:text-brand"
+              >
+                <LogOut className="h-[18px] w-[18px]" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <Link href="/auth/login" className="text-[15px] font-medium text-ink hover:text-brand">
+                Kirish
+              </Link>
+              <Link
+                href="/auth/register"
+                className="inline-flex items-center gap-1.5 rounded-[9px] bg-brand px-4 py-2.5 text-sm font-semibold text-sand shadow-btn-sm hover:bg-brand-dark"
+              >
+                Ro&apos;yxatdan o&apos;tish
+              </Link>
+            </div>
+          )}
+        </nav>
+
+        {/* Mobile toggle */}
+        <button
+          onClick={() => setOpen(v => !v)}
+          className="grid h-10 w-10 place-items-center rounded-xl border border-[rgba(43,39,34,0.12)] bg-sand-card text-ink md:hidden"
+          aria-label="Menyu"
+        >
+          {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {/* Mobile menu */}
+      {open && (
+        <div className="border-t border-[rgba(43,39,34,0.10)] bg-sand px-5 py-3 md:hidden">
+          <div className="flex flex-col gap-1">
+            {tabs.map(t => (
+              <Link
+                key={t.href}
+                href={t.href}
+                onClick={() => setOpen(false)}
                 className={cn(
-                  'flex items-center gap-1.5 px-3.5 py-2 rounded-xl whitespace-nowrap transition-all text-sm font-bold',
-                  isActive(tab.href)
-                    ? 'accent-bg shadow-sm shadow-emerald-500/30'
-                    : 'bg-gray-200/60 dark:bg-white/5 hover:bg-gray-200 dark:hover:bg-white/10 text-gray-600 dark:text-gray-300'
+                  'rounded-xl px-3 py-2.5 text-[15px] font-medium transition-colors',
+                  isActive(t.href) ? 'bg-brand-tint text-brand' : 'text-ink-mute hover:bg-sand-card',
                 )}
               >
-                <i className={`fa-solid ${tab.icon}`}></i>
-                <span>{tab.label}</span>
+                {t.label}
               </Link>
             ))}
-          </div>
-
-          <button
-            onClick={() => {
-              const html = document.documentElement
-              const dark = html.classList.toggle('dark')
-              localStorage.setItem('medCapsula_theme', dark ? 'dark' : 'light')
-              const icon = document.getElementById('themeIcon')
-              if (icon) icon.className = dark ? 'fa-solid fa-moon' : 'fa-solid fa-sun'
-            }}
-            className="p-2.5 rounded-xl bg-gray-200 dark:bg-white/5 text-gray-700 dark:text-gray-400 hover:text-emerald-400 transition-colors"
-            title="Tema"
-          >
-            <i id="themeIcon" className="fa-solid fa-moon"></i>
-          </button>
-
-          <div className="hidden sm:flex items-center gap-2">
+            <div className="my-1 h-px bg-[rgba(43,39,34,0.10)]" />
             {session ? (
               <>
+                <Link href="/dashboard" onClick={() => setOpen(false)} className="rounded-xl px-3 py-2.5 text-[15px] font-medium text-ink-mute hover:bg-sand-card">
+                  Profil
+                </Link>
                 {session.role === 'admin' && (
-                  <Link
-                    href="/admin"
-                    className="text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-200 dark:bg-white/5 px-3 py-2 rounded-xl"
-                  >
-                    <i className="fa-solid fa-shield-halved sm:mr-2 text-cyan-400"></i>
-                    <span className="hidden sm:inline">Admin</span>
+                  <Link href="/admin" onClick={() => setOpen(false)} className="rounded-xl px-3 py-2.5 text-[15px] font-medium text-ink-mute hover:bg-sand-card">
+                    Admin
                   </Link>
                 )}
-                <Link
-                  href="/dashboard"
-                  className="text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-200 dark:bg-white/5 px-3 py-2 rounded-xl"
-                >
-                  <i className="fa-solid fa-user text-cyan-400 sm:mr-2"></i>
-                  <span className="hidden sm:inline">{session.name}</span>
-                </Link>
-                <button
-                  onClick={handleLogout}
-                  className="text-sm font-semibold text-gray-600 dark:text-gray-400 hover:text-red-500 transition-colors bg-gray-200 dark:bg-white/5 px-3 py-2 rounded-xl"
-                >
-                  <i className="fa-solid fa-right-from-bracket sm:mr-2"></i>
-                  <span className="hidden sm:inline">Chiqish</span>
+                <button onClick={handleLogout} className="rounded-xl px-3 py-2.5 text-left text-[15px] font-medium text-brand hover:bg-sand-card">
+                  Chiqish
                 </button>
               </>
             ) : (
               <>
-                <Link
-                  href="/auth/login"
-                  className="text-sm font-semibold text-gray-700 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors bg-gray-200 dark:bg-white/5 px-3 sm:px-4 py-2 rounded-xl"
-                >
-                  <i className="fa-solid fa-right-to-bracket sm:mr-2 text-cyan-400"></i>
-                  <span className="hidden sm:inline">Kirish</span>
+                <Link href="/auth/login" onClick={() => setOpen(false)} className="rounded-xl px-3 py-2.5 text-[15px] font-medium text-ink-mute hover:bg-sand-card">
+                  Kirish
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="accent-bg rounded-xl px-3 sm:px-4 py-2 text-sm font-bold whitespace-nowrap"
+                  onClick={() => setOpen(false)}
+                  className="mt-1 inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand px-3 py-2.5 text-[15px] font-semibold text-sand"
                 >
-                  Ro'yxat
+                  Ro&apos;yxatdan o&apos;tish <ArrowRight className="h-4 w-4" />
                 </Link>
-              </>
-            )}
-          </div>
-
-          <a
-            href="https://t.me/Med_Capsula"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold px-3 py-2.5 rounded-xl transition-all hover:bg-emerald-500/20"
-          >
-            <i className="fa-brands fa-telegram text-base"></i>
-          </a>
-
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="md:hidden p-2 rounded-xl bg-gray-200 dark:bg-white/5 text-gray-600 dark:text-gray-400"
-          >
-            <i className={`fa-solid ${mobileOpen ? 'fa-xmark' : 'fa-bars'} text-lg`}></i>
-          </button>
-        </div>
-      </div>
-
-      {mobileOpen && (
-        <div className="md:hidden mt-3 pt-3 border-t border-black/5 dark:border-white/10 space-y-1">
-          {tabs.map(tab => (
-            <Link
-              key={tab.id}
-              href={tab.href}
-              onClick={() => setMobileOpen(false)}
-              className={cn(
-                'flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all',
-                isActive(tab.href) ? 'accent-bg' : 'text-gray-600 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-white/5'
-              )}
-            >
-              <i className={`fa-solid ${tab.icon} text-xs`}></i>
-              {tab.label}
-            </Link>
-          ))}
-          <div className="border-t border-black/5 dark:border-white/10 pt-1 mt-1">
-            {session ? (
-              <>
-                <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-white/5 rounded-xl">Dashboard</Link>
-                {session.role === 'admin' && (
-                  <Link href="/admin" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-white/5 rounded-xl">Admin</Link>
-                )}
-                <button onClick={handleLogout} className="block w-full text-left px-3 py-2 text-sm font-semibold text-red-500 hover:bg-gray-200/60 dark:hover:bg-white/5 rounded-xl">Chiqish</button>
-              </>
-            ) : (
-              <>
-                <Link href="/auth/login" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-semibold text-gray-600 dark:text-gray-300 hover:bg-gray-200/60 dark:hover:bg-white/5 rounded-xl">Kirish</Link>
-                <Link href="/auth/register" onClick={() => setMobileOpen(false)} className="block px-3 py-2 text-sm font-semibold accent-bg rounded-xl mt-1">Ro'yxatdan o'tish</Link>
               </>
             )}
           </div>
         </div>
       )}
-    </nav>
+    </header>
   )
 }
