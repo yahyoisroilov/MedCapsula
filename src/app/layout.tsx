@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Hanken_Grotesk, Spectral, Space_Mono } from 'next/font/google'
 import './globals.css'
 import { Navbar } from '@/components/layout/Navbar'
@@ -30,6 +30,17 @@ export const metadata: Metadata = {
   title: 'MedCapsula — Tibbiyotni 3 bosqichda',
   description:
     "Videodars, konspekt va test — har bir mavzu uchun. O'zbek tilidagi birinchi tibbiy ta'lim platformasi.",
+  icons: {
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+  },
+}
+
+export const viewport: Viewport = {
+  themeColor: '#2F6B4F',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

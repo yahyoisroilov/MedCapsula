@@ -6,6 +6,7 @@ import {
   Play,
   FileText,
   CheckCircle,
+  Check,
   ChevronRight,
   Globe,
   TrendingUp,
@@ -13,6 +14,7 @@ import {
   Layers,
   Target,
   GraduationCap,
+  Plus,
 } from '@/components/ui/icons'
 
 export const dynamic = 'force-dynamic'
@@ -133,6 +135,29 @@ export default async function LandingPage() {
     { initial: 'I', name: 'Ismoil', role: 'Tibbiyot talabasi & Kontent muharriri', tone: 'blue' as const },
   ]
 
+  const faqs = [
+    {
+      q: 'MedCapsula bepulmi?',
+      a: 'Ha. Hozircha barcha mavzular — videodars, konspekt va testlar — to‘liq bepul. Ro‘yxatdan o‘tib, darrov boshlashingiz mumkin.',
+    },
+    {
+      q: 'Darslar qaysi tilda?',
+      a: 'Barcha materiallar o‘zbek tilida. Tibbiyot atamalari talabalarga tushunarli tarzda izohlanadi.',
+    },
+    {
+      q: 'Qanday qurilmada ishlaydi?',
+      a: 'Telefon, planshet va kompyuter — brauzer orqali istalgan qurilmadan kirasiz. Alohida dastur o‘rnatish shart emas.',
+    },
+    {
+      q: 'Har bir mavzu qanday tuzilgan?',
+      a: 'Uch bosqichda: avval qisqa videodars, so‘ng asosiy fikrlar jamlangan konspekt, oxirida bilimni mustahkamlovchi interaktiv test.',
+    },
+    {
+      q: 'Yangi fanlar qo‘shiladimi?',
+      a: 'Ha, muntazam. Yangi mavzular va fanlardan birinchi bo‘lib xabardor bo‘lish uchun Telegram kanalimizga qo‘shiling.',
+    },
+  ]
+
   return (
     <div className="relative z-[2]">
       {/* ───────────────────────── HERO ───────────────────────── */}
@@ -160,6 +185,14 @@ export default async function LandingPage() {
               <a href={TELEGRAM} target="_blank" rel="noopener noreferrer" className="btn-secondary">
                 <Telegram className="h-[18px] w-[18px] text-sky" /> Telegram kanal
               </a>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 text-[13.5px] text-ink-mute">
+              {['100% bepul', 'O‘zbek tilida', 'Mobil & kompyuter'].map(t => (
+                <span key={t} className="inline-flex items-center gap-1.5">
+                  <Check className="h-4 w-4 text-brand" /> {t}
+                </span>
+              ))}
             </div>
 
             <div className="mt-12 flex max-w-[480px] items-stretch gap-0 border-t border-[rgba(43,39,34,0.12)] pt-6">
@@ -257,8 +290,126 @@ export default async function LandingPage() {
         </div>
       </section>
 
+      {/* ─────────────── WHAT'S INSIDE A LESSON ─────────────── */}
+      <section className="border-t border-[rgba(43,39,34,0.08)] bg-sand-deep">
+        <div className="mx-auto grid max-w-shell items-center gap-12 px-5 py-24 sm:px-10 lg:grid-cols-[0.92fr_1.08fr]">
+          {/* Left — explanation */}
+          <div>
+            <span className="mc-label">Dars ichida</span>
+            <h2 className="mt-3.5 max-w-[16ch] font-serif text-[clamp(30px,3.4vw,44px)] font-semibold leading-[1.08] tracking-[-0.02em] text-ink">
+              Bitta mavzu, uchta qadam — bir oqimda
+            </h2>
+            <p className="mt-5 max-w-[44ch] text-[16.5px] leading-relaxed text-ink-mute">
+              Har bir mavzu video, konspekt va testdan iborat. Boshladingizmi — oxirigacha bir tartibda
+              olib boradi. Hech narsa axtarib o‘tirmaysiz.
+            </p>
+
+            <ul className="mt-8 space-y-3.5">
+              {steps.map(st => (
+                <li key={st.n} className="flex items-start gap-3.5">
+                  <span
+                    className={`mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-[10px] ${
+                      st.tone === 'green' ? 'bg-brand-tint text-brand' : 'bg-sky-tint text-sky'
+                    }`}
+                  >
+                    {st.icon}
+                  </span>
+                  <div>
+                    <h3 className="font-serif text-[18px] font-semibold text-ink">{st.title}</h3>
+                    <p className="text-[14.5px] leading-relaxed text-ink-mute">{st.text}</p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+
+            <Link href="/subjects" className="btn-primary mt-9">
+              Mavzularni ko‘rish <ArrowRight className="h-[18px] w-[18px]" />
+            </Link>
+          </div>
+
+          {/* Right — lesson preview mock */}
+          <div className="relative">
+            <div
+              className="absolute -inset-4 -z-10 rounded-[32px] opacity-60 blur-2xl"
+              style={{ background: 'radial-gradient(60% 60% at 70% 20%, rgba(47,107,79,0.16), transparent)' }}
+              aria-hidden="true"
+            />
+            <div className="overflow-hidden rounded-[22px] border border-[rgba(43,39,34,0.12)] bg-sand-card shadow-feature">
+              {/* tab bar */}
+              <div className="flex items-center gap-1.5 border-b border-[rgba(43,39,34,0.1)] px-4 py-3">
+                <span className="pill pill-green !py-0.5 !text-[12px]">
+                  <Play className="h-3.5 w-3.5" /> Videodars
+                </span>
+                <span className="pill pill-muted !py-0.5 !text-[12px]">Konspekt</span>
+                <span className="pill pill-muted !py-0.5 !text-[12px]">Test</span>
+                <span className="ml-auto font-mono text-[11px] text-ink-faint">Anatomiya · 01</span>
+              </div>
+
+              {/* video frame */}
+              <div
+                className="relative grid aspect-video place-items-center"
+                style={{ background: 'linear-gradient(135deg,#2F6B4F,#27593f 55%,#3f7da3)' }}
+              >
+                <span className="grid h-16 w-16 place-items-center rounded-full bg-white/90 text-brand shadow-lift">
+                  <Play className="h-7 w-7" />
+                </span>
+                <span className="absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-full bg-black/30 px-2.5 py-1 font-mono text-[11px] text-white">
+                  <Clock className="h-3.5 w-3.5" /> 25:00
+                </span>
+              </div>
+
+              {/* konspekt + test preview */}
+              <div className="space-y-5 p-5">
+                <div>
+                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-sky-text">
+                    Konspekt
+                  </span>
+                  <h4 className="mt-1.5 font-serif text-[17px] font-semibold text-ink">
+                    Skelet sistemasi
+                  </h4>
+                  <div className="mt-2.5 space-y-2">
+                    <span className="block h-2.5 w-full rounded-full bg-[rgba(43,39,34,0.07)]" />
+                    <span className="block h-2.5 w-11/12 rounded-full bg-[rgba(43,39,34,0.07)]" />
+                    <span className="block h-2.5 w-3/4 rounded-full bg-[rgba(43,39,34,0.07)]" />
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-[rgba(43,39,34,0.1)] bg-sand p-4">
+                  <span className="font-mono text-[11px] uppercase tracking-[0.08em] text-brand-soft">
+                    Test
+                  </span>
+                  <p className="mt-1.5 text-[14.5px] font-semibold text-ink">
+                    Inson skeletida nechta suyak bor?
+                  </p>
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {[
+                      { t: '150', ok: false },
+                      { t: '180', ok: false },
+                      { t: '206', ok: true },
+                      { t: '250', ok: false },
+                    ].map(o => (
+                      <span
+                        key={o.t}
+                        className={`inline-flex items-center justify-between rounded-xl border px-3 py-2 text-[13.5px] font-medium ${
+                          o.ok
+                            ? 'border-brand-line bg-brand-tint text-brand'
+                            : 'border-[rgba(43,39,34,0.12)] bg-sand-card text-ink-mute'
+                        }`}
+                      >
+                        {o.t}
+                        {o.ok && <Check className="h-4 w-4" />}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ───────────────────────── WHY ───────────────────────── */}
-      <section id="nega" className="border-t border-[rgba(43,39,34,0.08)] bg-sand-deep">
+      <section id="nega" className="border-t border-[rgba(43,39,34,0.08)]">
         <div className="mx-auto grid max-w-shell gap-12 px-5 py-24 sm:px-10 lg:grid-cols-[0.82fr_1.18fr]">
           <div className="lg:sticky lg:top-24 lg:self-start">
             <span className="mc-label">Nega?</span>
@@ -295,7 +446,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ───────────────────────── TEAM ───────────────────────── */}
-      <section className="border-t border-[rgba(43,39,34,0.08)]">
+      <section className="border-t border-[rgba(43,39,34,0.08)] bg-sand-deep">
         <div className="mx-auto max-w-shell px-5 py-24 sm:px-10">
           <div className="max-w-[54ch]">
             <span className="mc-label">Jamoa</span>
@@ -339,7 +490,7 @@ export default async function LandingPage() {
       </section>
 
       {/* ─────────────────────── SUBJECTS ─────────────────────── */}
-      <section id="fanlar" className="border-t border-[rgba(43,39,34,0.08)] bg-sand-deep">
+      <section id="fanlar" className="border-t border-[rgba(43,39,34,0.08)]">
         <div className="mx-auto max-w-shell px-5 py-24 sm:px-10">
           <div className="flex flex-wrap items-end justify-between gap-5">
             <div>
@@ -393,6 +544,51 @@ export default async function LandingPage() {
                 <span className="mt-3 font-mono text-[11.5px] text-ink-faint">Tez orada</span>
               </div>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ─────────────────────────── FAQ ─────────────────────────── */}
+      <section className="border-t border-[rgba(43,39,34,0.08)] bg-sand-deep">
+        <div className="mx-auto max-w-shell px-5 py-24 sm:px-10">
+          <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr]">
+            <div className="lg:sticky lg:top-24 lg:self-start">
+              <span className="mc-label">Savollar</span>
+              <h2 className="mt-3.5 font-serif text-[clamp(30px,3.3vw,44px)] font-semibold leading-[1.08] tracking-[-0.02em] text-ink">
+                Ko‘p beriladigan savollar
+              </h2>
+              <p className="mt-5 max-w-[32ch] text-[16px] leading-relaxed text-ink-mute">
+                Boshqa savolingiz bormi?{' '}
+                <a
+                  href={TELEGRAM}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-semibold text-brand underline-offset-2 hover:underline"
+                >
+                  Telegram
+                </a>{' '}
+                orqali yozing — javob beramiz.
+              </p>
+            </div>
+
+            <div className="overflow-hidden rounded-2xl border border-[rgba(43,39,34,0.12)] bg-sand-card shadow-card">
+              {faqs.map(f => (
+                <details
+                  key={f.q}
+                  className="group border-b border-[rgba(43,39,34,0.1)] last:border-b-0"
+                >
+                  <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-6 py-5 [&::-webkit-details-marker]:hidden">
+                    <span className="font-serif text-[18px] font-semibold text-ink">{f.q}</span>
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full border border-[rgba(43,39,34,0.16)] text-ink-mute transition-transform duration-200 group-open:rotate-45">
+                      <Plus className="h-4 w-4" />
+                    </span>
+                  </summary>
+                  <p className="-mt-1 max-w-[60ch] px-6 pb-5 text-[15px] leading-relaxed text-ink-mute">
+                    {f.a}
+                  </p>
+                </details>
+              ))}
+            </div>
           </div>
         </div>
       </section>

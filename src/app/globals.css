@@ -73,3 +73,52 @@ body {
   color: #a89d86;
   pointer-events: none;
 }
+
+/* ───────────────────────── Loading states ───────────────────────── */
+@keyframes mcShimmer { 100% { transform: translateX(100%); } }
+@keyframes mcBob {
+  0%, 100% { transform: translateY(0) rotate(8deg); }
+  50%      { transform: translateY(-9px) rotate(8deg); }
+}
+@keyframes mcGlow {
+  0%, 100% { opacity: 0.45; transform: scale(0.94); }
+  50%      { opacity: 0.8;  transform: scale(1.06); }
+}
+@keyframes mcDot {
+  0%, 100% { opacity: 0.25; transform: translateY(0); }
+  40%      { opacity: 1;    transform: translateY(-4px); }
+}
+@keyframes mcSheen {
+  0%   { transform: translateY(-120%); }
+  60%, 100% { transform: translateY(220%); }
+}
+
+/* Warm, branded skeleton with a sweeping highlight */
+.mc-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: rgba(43, 39, 34, 0.055);
+  border-radius: inherit;
+}
+.mc-skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(47, 107, 79, 0.12) 45%,
+    rgba(127, 184, 220, 0.1) 55%,
+    transparent
+  );
+  animation: mcShimmer 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-skeleton::after,
+  .mc-cap-bob,
+  .mc-cap-glow,
+  .mc-cap-sheen,
+  .mc-cap-dot { animation: none !important; }
+}

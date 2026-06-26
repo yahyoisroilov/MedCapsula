@@ -8,6 +8,14 @@ export async function GET(
   const { slug } = await params
   const supabase = await createClient()
 
+  // Lesson material (video, konspekt, test) is gated — login required.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   const { data: course, error } = await supabase
     .from('courses')
     .select('*')
