@@ -40,12 +40,15 @@ export async function getSubjects(): Promise<SubjectSummary[]> {
 
         let doneCount = 0
         if (user) {
+          // Only count progress that maps to a topic that still exists —
+          // deleting lessons can leave orphaned progress rows behind.
           const { data: progress } = await supabase
             .from('lesson_progress')
             .select('lesson_index')
             .eq('user_id', user.id)
             .eq('course_id', course.id)
             .eq('step', 'done')
+            .lt('lesson_index', count || 0)
           doneCount = progress?.length || 0
         }
 
