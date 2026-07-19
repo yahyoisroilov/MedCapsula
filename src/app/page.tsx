@@ -132,7 +132,6 @@ export default async function LandingPage() {
 
   const team = [
     { initial: 'Y', name: 'Yahyobek', role: 'Tibbiyot talabasi & Dasturchi', tone: 'green' as const },
-    { initial: 'I', name: 'Ismoil', role: 'Tibbiyot talabasi & Kontent muharriri', tone: 'blue' as const },
   ]
 
   const faqs = [
@@ -451,14 +450,14 @@ export default async function LandingPage() {
           <div className="max-w-[54ch]">
             <span className="mc-label">Jamoa</span>
             <h2 className="mt-3.5 font-serif text-[clamp(32px,3.6vw,46px)] font-semibold leading-[1.06] tracking-[-0.02em] text-ink">
-              Ikki talaba. Bitta g‘oya.
+              Bir talaba. Bitta g‘oya.
             </h2>
             <p className="mt-4 text-[17px] leading-relaxed text-ink-mute">
-              MedCapsula‘ni biz — tibbiyot talabalari — o‘z tajribamizdan kelib chiqib yaratdik.
+              MedCapsula‘ni men — tibbiyot talabasi — o‘z tajribamdan kelib chiqib yaratdim.
             </p>
           </div>
 
-          <div className="mt-11 grid gap-6 sm:grid-cols-2">
+          <div className="mt-11 grid max-w-[520px] gap-6">
             {team.map(m => (
               <div
                 key={m.name}
