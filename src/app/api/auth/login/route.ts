@@ -6,7 +6,7 @@ export async function POST(request: Request) {
     const { email, password } = await request.json()
 
     if (!email || !password) {
-      return NextResponse.json({ error: 'Email and password required' }, { status: 400 })
+      return NextResponse.json({ error: 'Email va parolni kiriting' }, { status: 400 })
     }
 
     const supabase = await createClient()
@@ -17,7 +17,12 @@ export async function POST(request: Request) {
     })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 401 })
+      const msg = /invalid login credentials/i.test(error.message)
+        ? 'Email yoki parol noto‘g‘ri'
+        : /not confirmed/i.test(error.message)
+          ? 'Email tasdiqlanmagan'
+          : 'Kirishda xatolik. Qayta urinib ko‘ring.'
+      return NextResponse.json({ error: msg }, { status: 401 })
     }
 
     const { data: profile } = await supabase
@@ -35,6 +40,6 @@ export async function POST(request: Request) {
       },
     })
   } catch {
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    return NextResponse.json({ error: 'Serverda xatolik. Qayta urinib ko‘ring.' }, { status: 500 })
   }
 }

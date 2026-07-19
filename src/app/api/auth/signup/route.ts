@@ -6,11 +6,14 @@ export async function POST(request: Request) {
     const { name, email, password } = await request.json()
 
     if (!email || !password || !name) {
-      return NextResponse.json({ error: 'All fields required' }, { status: 400 })
+      return NextResponse.json({ error: 'Barcha maydonlarni to‘ldiring' }, { status: 400 })
     }
 
     if (password.length < 6) {
-      return NextResponse.json({ error: 'Password must be at least 6 characters' }, { status: 400 })
+      return NextResponse.json(
+        { error: 'Parol kamida 6 ta belgidan iborat bo‘lishi kerak' },
+        { status: 400 },
+      )
     }
 
     const supabase = createAdminClient()
@@ -23,7 +26,10 @@ export async function POST(request: Request) {
     })
 
     if (error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
+      const msg = /already|exists/i.test(error.message)
+        ? 'Bu email bilan hisob allaqachon mavjud'
+        : 'Ro‘yxatdan o‘tishda xatolik. Qayta urinib ko‘ring.'
+      return NextResponse.json({ error: msg }, { status: 400 })
     }
 
     return NextResponse.json({
@@ -35,6 +41,6 @@ export async function POST(request: Request) {
       },
     })
   } catch {
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 })
+    return NextResponse.json({ error: 'Serverda xatolik. Qayta urinib ko‘ring.' }, { status: 500 })
   }
 }
