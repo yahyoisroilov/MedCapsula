@@ -221,3 +221,24 @@ body {
   color: #8a8377;
   font-family: var(--font-mono), monospace;
 }
+
+/* WYSIWYG Konspekt editor surface */
+.mc-wysiwyg {
+  position: relative;
+  caret-color: #2F6B4F;
+  cursor: text;
+}
+.mc-wysiwyg[data-empty='true']::before {
+  content: attr(data-placeholder);
+  position: absolute;
+  left: 20px;
+  top: 16px;
+  color: #a89f90;
+  pointer-events: none;
+}
+.mc-wysiwyg ::selection {
+  background: rgba(47, 107, 79, 0.18);
+}
+.mc-wysiwyg b { font-weight: 700; color: #2b2722; }
+.mc-wysiwyg i { font-style: italic; }
+.mc-wysiwyg figure.mc-k-figure figcaption:focus { outline: none; }

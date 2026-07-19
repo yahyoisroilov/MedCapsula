@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import {
   Bold, Italic, Heading, Highlighter, ListBullet, ListNumbered, Quote,
   LinkIcon, Image, Minus, Upload, RotateCw, X,
@@ -40,18 +40,111 @@ const groups: { label: string; items: { key: ToolbarAction; label: string; Icon:
   },
 ]
 
-const wrappers: Record<ToolbarAction, [string, string]> = {
-  bold: ['**', '**'],
-  italic: ['*', '*'],
-  highlight: ['==', '=='],
-  h2: ['\n## ', ''],
-  h3: ['\n### ', ''],
-  ul: ['\n- ', ''],
-  ol: ['\n1. ', ''],
-  quote: ['\n> ', ''],
-  link: ['[', '](https://)'],
-  hr: ['\n\n---\n\n', ''],
+/* ─────────────────────  DOM → markdown (background sync)  ───────────────────── */
+
+const BLOCK_TAGS = new Set(['H2', 'H3', 'H4', 'P', 'DIV', 'UL', 'OL', 'BLOCKQUOTE', 'FIGURE', 'HR'])
+
+// Serialize inline content; <br> becomes a newline within the block.
+function inlineMd(node: Node): string {
+  if (node.nodeType === Node.TEXT_NODE) {
+    return (node.textContent || '').replace(/ /g, ' ')
+  }
+  if (!(node instanceof HTMLElement)) return ''
+  const kids = Array.from(node.childNodes).map(inlineMd).join('')
+  switch (node.tagName) {
+    case 'STRONG':
+    case 'B':
+      return kids.trim() ? `**${kids}**` : kids
+    case 'EM':
+    case 'I':
+      return kids.trim() ? `*${kids}*` : kids
+    case 'MARK':
+      return kids.trim() ? `==${kids}==` : kids
+    case 'A':
+      return `[${kids || node.getAttribute('href') || ''}](${node.getAttribute('href') || ''})`
+    case 'IMG':
+      return `![${node.getAttribute('alt') || ''}](${node.getAttribute('src') || ''})`
+    case 'BR':
+      return '\n'
+    default:
+      return kids
+  }
 }
+
+function listMd(el: HTMLElement, ordered: boolean): string | null {
+  const items = Array.from(el.children)
+    .filter(c => c.tagName === 'LI')
+    .map(li => inlineMd(li).replace(/\n/g, ' ').trim())
+    .filter(Boolean)
+  if (!items.length) return null
+  return items.map((t, i) => (ordered ? `${i + 1}. ${t}` : `- ${t}`)).join('\n')
+}
+
+function blockMd(node: Node): string | null {
+  if (node.nodeType === Node.TEXT_NODE) {
+    const t = (node.textContent || '').replace(/ /g, ' ').trim()
+    return t || null
+  }
+  if (!(node instanceof HTMLElement)) return null
+
+  switch (node.tagName) {
+    case 'H2':
+      return withPrefix('## ', node)
+    case 'H3':
+      return withPrefix('### ', node)
+    case 'H4':
+      return withPrefix('#### ', node)
+    case 'HR':
+      return '---'
+    case 'UL':
+      return listMd(node, false)
+    case 'OL':
+      return listMd(node, true)
+    case 'BLOCKQUOTE': {
+      const text = inlineMd(node).trim()
+      if (!text) return null
+      return text
+        .split('\n')
+        .map(l => `> ${l.trim()}`)
+        .join('\n')
+    }
+    case 'FIGURE': {
+      const img = node.querySelector('img')
+      if (!img) return null
+      const cap = node.querySelector('figcaption')?.textContent?.trim() || img.getAttribute('alt') || ''
+      return `![${cap}](${img.getAttribute('src') || ''})`
+    }
+    case 'IMG':
+      return `![${node.getAttribute('alt') || ''}](${node.getAttribute('src') || ''})`
+    case 'P':
+    case 'DIV': {
+      // Browsers sometimes nest blocks inside divs — recurse in that case.
+      if (Array.from(node.children).some(c => BLOCK_TAGS.has(c.tagName))) {
+        return domToMarkdown(node) || null
+      }
+      const text = inlineMd(node).replace(/\n{2,}/g, '\n').trim()
+      return text || null
+    }
+    default: {
+      const text = inlineMd(node).trim()
+      return text || null
+    }
+  }
+}
+
+function withPrefix(prefix: string, el: HTMLElement): string | null {
+  const text = inlineMd(el).replace(/\n/g, ' ').trim()
+  return text ? prefix + text : null
+}
+
+function domToMarkdown(root: HTMLElement): string {
+  return Array.from(root.childNodes)
+    .map(blockMd)
+    .filter((b): b is string => Boolean(b))
+    .join('\n\n')
+}
+
+/* ─────────────────────────────  WYSIWYG editor  ───────────────────────────── */
 
 export function MarkdownEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [imgOpen, setImgOpen] = useState(false)
@@ -60,58 +153,151 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
   const [imgPos, setImgPos] = useState<'top' | 'cursor' | 'end'>('cursor')
   const [uploading, setUploading] = useState(false)
   const [uploadErr, setUploadErr] = useState('')
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const editorRef = useRef<HTMLDivElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
+  // Last markdown we emitted — lets us tell our own onChange echo apart from
+  // an external value change (which must re-render the DOM).
+  const emitted = useRef<string | null>(null)
+  // Last block the caret was in, so image insert works after focus moves to the panel.
+  const lastBlock = useRef<HTMLElement | null>(null)
 
-  // Insert text at the caret (or wrap the current selection).
-  const insertAtCursor = useCallback(
-    (open: string, close = '', placeholder = '') => {
-      const ta = textareaRef.current
-      const start = ta ? ta.selectionStart : value.length
-      const end = ta ? ta.selectionEnd : value.length
-      const before = value.slice(0, start)
-      const selected = value.slice(start, end)
-      const after = value.slice(end)
-      const inner = selected || placeholder
-      const replacement = open + inner + close
-      onChange(before + replacement + after)
-      requestAnimationFrame(() => {
-        if (!ta) return
-        ta.focus()
-        const cursor = before.length + replacement.length
-        ta.setSelectionRange(cursor, cursor)
-      })
+  // Editor DOM → markdown, emitted upward. The visible document IS the editor;
+  // markdown is derived in the background.
+  const sync = useCallback(() => {
+    const el = editorRef.current
+    if (!el) return
+    const md = domToMarkdown(el)
+    el.dataset.empty = md.trim() ? 'false' : 'true'
+    emitted.current = md
+    onChange(md)
+  }, [onChange])
+
+  // External markdown → editor DOM (initial mount, or value changed outside us).
+  useEffect(() => {
+    const el = editorRef.current
+    if (!el || emitted.current === value) return
+    el.innerHTML = renderMarkdown(value || '')
+    el.dataset.empty = value && value.trim() ? 'false' : 'true'
+    emitted.current = value
+  }, [value])
+
+  useEffect(() => {
+    // Prefer semantic tags (<b>/<i>) and <p> paragraphs from execCommand.
+    try {
+      document.execCommand('styleWithCSS', false, 'false')
+      document.execCommand('defaultParagraphSeparator', false, 'p')
+    } catch {
+      /* older browsers */
+    }
+  }, [])
+
+  const rememberBlock = useCallback(() => {
+    const el = editorRef.current
+    const sel = window.getSelection()
+    if (!el || !sel?.anchorNode || !el.contains(sel.anchorNode)) return
+    let n: Node | null = sel.anchorNode
+    while (n && n.parentNode !== el) n = n.parentNode
+    lastBlock.current = n instanceof HTMLElement ? n : null
+  }, [])
+
+  const exec = useCallback(
+    (cmd: string, arg?: string) => {
+      editorRef.current?.focus()
+      document.execCommand(cmd, false, arg)
+      sync()
     },
-    [value, onChange],
+    [sync],
   )
 
   const applyAction = useCallback(
     (key: ToolbarAction) => {
-      const [open, close] = wrappers[key]
-      const placeholder = key === 'link' ? 'havola matni' : ''
-      insertAtCursor(open, close, placeholder)
+      switch (key) {
+        case 'bold':
+          return exec('bold')
+        case 'italic':
+          return exec('italic')
+        case 'h2':
+        case 'h3': {
+          // Toggle: pressing again turns the heading back into a paragraph.
+          const cur = document.queryCommandValue('formatBlock').toLowerCase()
+          return exec('formatBlock', cur === key ? 'p' : key)
+        }
+        case 'quote': {
+          const cur = document.queryCommandValue('formatBlock').toLowerCase()
+          return exec('formatBlock', cur === 'blockquote' ? 'p' : 'blockquote')
+        }
+        case 'ul':
+          return exec('insertUnorderedList')
+        case 'ol':
+          return exec('insertOrderedList')
+        case 'hr':
+          return exec('insertHorizontalRule')
+        case 'highlight': {
+          const sel = window.getSelection()
+          const anchor = sel?.anchorNode
+          const markEl =
+            anchor instanceof Element
+              ? anchor.closest('mark')
+              : anchor?.parentElement?.closest('mark')
+          if (markEl && editorRef.current?.contains(markEl)) {
+            // Toggle off: unwrap the existing highlight.
+            markEl.replaceWith(...Array.from(markEl.childNodes))
+            sync()
+            return
+          }
+          const text = sel?.toString()
+          if (!text) return
+          return exec('insertHTML', `<mark>${escHtml(text)}</mark>`)
+        }
+        case 'link': {
+          const url = window.prompt('Havola manzili (URL):', 'https://')
+          if (!url || url === 'https://') return
+          const sel = window.getSelection()
+          if (!sel || sel.isCollapsed) {
+            return exec('insertHTML', `<a href="${escHtml(url)}" target="_blank" rel="noopener noreferrer">${escHtml(url)}</a>`)
+          }
+          return exec('createLink', url)
+        }
+      }
     },
-    [insertAtCursor],
+    [exec, sync],
   )
 
-  // Drop `![alt](url)` into the text at the chosen position: top, caret, or end.
+  // Insert an image figure directly into the document at the chosen position.
   const insertImage = useCallback(
     (url: string, alt: string) => {
-      if (!url.trim()) return
-      const block = `![${alt.trim()}](${url.trim()})`
-      if (imgPos === 'top') {
-        onChange(`${block}\n\n${value.replace(/^\n+/, '')}`)
-      } else if (imgPos === 'end') {
-        onChange(`${value.replace(/\n+$/, '')}\n\n${block}\n`)
-      } else {
-        insertAtCursor(`\n\n${block}\n\n`)
+      const el = editorRef.current
+      if (!el || !url.trim()) return
+      const fig = document.createElement('figure')
+      fig.className = 'mc-k-figure'
+      const img = document.createElement('img')
+      img.src = url.trim()
+      img.alt = alt.trim()
+      img.loading = 'lazy'
+      fig.appendChild(img)
+      if (alt.trim()) {
+        const cap = document.createElement('figcaption')
+        cap.textContent = alt.trim()
+        fig.appendChild(cap)
       }
+
+      if (imgPos === 'top') {
+        el.prepend(fig)
+      } else if (imgPos === 'end') {
+        el.append(fig)
+      } else {
+        const target = lastBlock.current
+        if (target && el.contains(target)) target.after(fig)
+        else el.append(fig)
+      }
+
+      sync()
       setImgOpen(false)
       setImgUrl('')
       setImgAlt('')
       setUploadErr('')
     },
-    [imgPos, value, onChange, insertAtCursor],
+    [imgPos, sync],
   )
 
   const handleUpload = useCallback(
@@ -134,18 +320,6 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
     [imgAlt, insertImage],
   )
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Tab') {
-      e.preventDefault()
-      const ta = textareaRef.current
-      if (!ta) return
-      const start = ta.selectionStart
-      const newVal = value.slice(0, start) + '  ' + value.slice(ta.selectionEnd)
-      onChange(newVal)
-      requestAnimationFrame(() => ta.setSelectionRange(start + 2, start + 2))
-    }
-  }
-
   return (
     <div className="overflow-hidden rounded-xl border border-[rgba(43,39,34,0.12)]">
       {/* Toolbar */}
@@ -157,6 +331,7 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
               <button
                 key={a.key}
                 type="button"
+                onMouseDown={e => e.preventDefault()} /* keep the editor selection */
                 onClick={() => applyAction(a.key)}
                 title={a.label}
                 className="flex h-7 w-7 items-center justify-center rounded-lg text-ink-mute transition-colors hover:bg-[rgba(43,39,34,0.06)] hover:text-ink"
@@ -171,6 +346,7 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
         <span className="mx-1 h-5 w-px bg-[rgba(43,39,34,0.12)]" />
         <button
           type="button"
+          onMouseDown={e => e.preventDefault()}
           onClick={() => {
             setImgOpen(v => !v)
             setUploadErr('')
@@ -209,6 +385,7 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
               />
             </div>
           </div>
+
           {/* Where the image goes */}
           <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
             <span className="mr-1 text-[11px] font-semibold text-ink-mute">Joylashuv:</span>
@@ -275,42 +452,40 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
           </div>
           {uploadErr && <p className="mt-2 text-[12px] text-[#b3493d]">{uploadErr}</p>}
           <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
-            &quot;Kursor joyiga&quot; — matn ichida kursor turgan joyga qo&apos;shadi (o&apos;rtaga qo&apos;yish uchun
-            avval matnda kerakli joyni bosing). Maks. 5 MB.
+            &quot;Kursor joyiga&quot; — matn ichida kursor turgan joydan keyin qo&apos;shadi. Maks. 5 MB.
           </p>
         </div>
       )}
 
-      {/* Live editor + preview side by side — type on the left, see the result on the right. */}
-      <div className="grid md:grid-cols-2">
-        <div className="flex flex-col">
-          <div className="flex items-center gap-1.5 border-b border-[rgba(43,39,34,0.08)] bg-sand px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint">
-            Yozish
-          </div>
-          <textarea
-            ref={textareaRef}
-            value={value}
-            onChange={e => onChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            rows={14}
-            className="min-h-[300px] w-full flex-1 resize-y bg-sand-card px-4 py-3 font-mono text-sm leading-relaxed text-ink focus:outline-none"
-            placeholder={'Konspekt matnini yozing…\n\n## Sarlavha\n**qalin**  *kursiv*  ==ajratilgan==\n- ro‘yxat\n\nRasm: yuqoridagi "Rasm" tugmasi'}
-          />
-        </div>
-        <div className="flex flex-col border-t border-[rgba(43,39,34,0.1)] md:border-l md:border-t-0">
-          <div className="flex items-center gap-1.5 border-b border-[rgba(43,39,34,0.08)] bg-sand px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint">
-            Ko&apos;rinishi
-          </div>
-          <div className="min-h-[300px] flex-1 overflow-auto bg-sand-card px-5 py-4">
-            <MarkdownRenderer content={value} />
-          </div>
-        </div>
-      </div>
+      {/* The document itself is editable — styled exactly like the student page. */}
+      <div
+        ref={editorRef}
+        contentEditable
+        role="textbox"
+        aria-multiline="true"
+        data-placeholder="Konspekt matnini yozing…"
+        onInput={sync}
+        onKeyUp={rememberBlock}
+        onMouseUp={rememberBlock}
+        onBlur={rememberBlock}
+        onPaste={e => {
+          // Paste as plain text so outside formatting can't corrupt the document.
+          e.preventDefault()
+          const text = e.clipboardData.getData('text/plain')
+          document.execCommand('insertText', false, text)
+          sync()
+        }}
+        className="mc-konspekt mc-wysiwyg min-h-[320px] w-full bg-sand-card px-5 py-4 focus:outline-none"
+      />
     </div>
   )
 }
 
-/* ─────────────────────────  Renderer  ───────────────────────── */
+/* ─────────────────────────  markdown → HTML renderer  ───────────────────────── */
+
+function escHtml(s: string) {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
 
 function esc(s: string) {
   return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -337,7 +512,7 @@ function inline(raw: string) {
 const IMG_LINE = /^!\[([^\]]*)\]\(([^)\s]+)\)$/
 const BLOCK_START = /^(#{2,4}\s|[-*]\s|\d+\.\s|>\s?|---+\s*$)/
 
-function renderMarkdown(src: string) {
+export function renderMarkdown(src: string) {
   const lines = src.replace(/\r\n/g, '\n').split('\n')
   const out: string[] = []
   let i = 0
