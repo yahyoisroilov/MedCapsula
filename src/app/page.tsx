@@ -151,8 +151,22 @@ export default async function LandingPage() {
   ]
 
   const team = [
-    { initial: 'Y', name: 'Yahyobek', role: 'Tibbiyot talabasi & Dasturchi', tone: 'green' as const },
-    { initial: 'A', name: 'Azizbek', role: 'Tibbiyot talabasi', tone: 'blue' as const },
+    {
+      initial: 'Y',
+      name: 'Yahyobek',
+      role: 'Tibbiyot talabasi & Dasturchi',
+      tone: 'green' as const,
+      channel: 'https://t.me/isrlv_blog',
+      handle: '@isrlv_blog',
+    },
+    {
+      initial: 'A',
+      name: 'Azizbek',
+      role: 'Tibbiyot talabasi',
+      tone: 'blue' as const,
+      channel: 'https://t.me/asu_journey',
+      handle: '@asu_journey',
+    },
   ]
 
   const faqs = [
@@ -484,24 +498,42 @@ export default async function LandingPage() {
                 key={m.name}
                 className="flex items-center gap-5 rounded-[20px] border border-[rgba(43,39,34,0.10)] bg-sand-card p-6"
               >
-                <div
-                  className="grid h-[140px] w-[120px] shrink-0 place-items-center gap-2 rounded-[14px] border border-[rgba(43,39,34,0.1)]"
-                  style={{
-                    background:
-                      'repeating-linear-gradient(135deg,#E9E1CF,#E9E1CF 7px,#EFE8D8 7px,#EFE8D8 14px)',
-                  }}
+                <a
+                  href={m.channel}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`group grid h-[140px] w-[120px] shrink-0 place-items-center content-center gap-2.5 rounded-[14px] border transition-colors ${
+                    m.tone === 'green'
+                      ? 'border-brand-line bg-brand-tint hover:border-brand'
+                      : 'border-[rgba(90,149,190,0.3)] bg-sky-tint hover:border-sky'
+                  }`}
+                  title={`${m.name} — Telegram kanal`}
                 >
-                  <span className={`font-serif text-[38px] ${m.tone === 'green' ? 'text-brand' : 'text-sky'}`}>
-                    {m.initial}
+                  <span
+                    className={`grid h-14 w-14 place-items-center rounded-full text-sand shadow-btn-sm transition-transform group-hover:scale-105 ${
+                      m.tone === 'green' ? 'bg-brand' : 'bg-sky'
+                    }`}
+                  >
+                    <Telegram className="h-7 w-7" />
                   </span>
-                  <span className="font-mono text-[9px] uppercase tracking-[0.05em] text-ink-faint">Rasm</span>
-                </div>
+                  <span className="max-w-[104px] truncate px-1 font-mono text-[10.5px] text-ink-mute">
+                    {m.handle}
+                  </span>
+                </a>
                 <div>
                   <h3 className="font-serif text-[25px] font-semibold text-ink">{m.name}</h3>
                   <span className={`pill mt-2.5 ${m.tone === 'green' ? 'pill-green' : 'pill-blue'}`}>
                     <span className={`h-1.5 w-1.5 rounded-full ${m.tone === 'green' ? 'bg-brand' : 'bg-sky'}`} />
                     {m.role}
                   </span>
+                  <a
+                    href={m.channel}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-3 flex items-center gap-1.5 text-[13.5px] font-medium text-ink-mute transition-colors hover:text-brand"
+                  >
+                    <Telegram className="h-4 w-4" /> Telegram kanal
+                  </a>
                 </div>
               </div>
             ))}
