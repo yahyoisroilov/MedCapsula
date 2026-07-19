@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useRouter } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import { MarkdownRenderer } from '@/components/ui/KonspektContent'
 import {
@@ -74,6 +75,8 @@ function EmptyState({ title, sub }: { title: string; sub: string }) {
 }
 
 export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: StepFlowProps) {
+  const router = useRouter()
+  const [finishing, setFinishing] = useState(false)
   const [topicStep, setTopicStep] = useState(() => {
     if (initialStep === 'done') return 2
     return Math.min(Number(initialStep), 2)
@@ -110,16 +113,21 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
 
   const completeStep = async (step: number) => {
     const cur = initialStep
-    let next: string | number
-    if (step === 2) next = 'done'
-    else next = Math.max(typeof cur === 'number' ? cur : 0, step + 1)
 
+    // Final step: mark the topic done and return to the subject page.
+    if (step === 2) {
+      setFinishing(true)
+      if (cur !== 'done') await saveProgress('done')
+      router.push(`/subjects/${slug}`)
+      router.refresh()
+      return
+    }
+
+    const next = Math.max(typeof cur === 'number' ? cur : 0, step + 1)
     if (cur !== 'done') await saveProgress(next)
-    if (step < 2) {
-      setTopicStep(step + 1)
-      if (step + 1 === 2 && !quizState) {
-        setQuizState({ idx: 0, score: 0, selected: null, finished: false })
-      }
+    setTopicStep(step + 1)
+    if (step + 1 === 2 && !quizState) {
+      setQuizState({ idx: 0, score: 0, selected: null, finished: false })
     }
   }
 
@@ -249,8 +257,17 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
                   >
                     <ArrowLeft className="h-4 w-4" /> Konspekt
                   </button>
-                  <button onClick={() => completeStep(2)} className="btn-sm px-5 py-3">
-                    <Check className="h-[18px] w-[18px]" /> Mavzuni yakunlash
+                  <button
+                    onClick={() => completeStep(2)}
+                    disabled={finishing}
+                    className="btn-sm px-5 py-3 disabled:opacity-60"
+                  >
+                    {finishing ? (
+                      <RotateCw className="h-[18px] w-[18px] animate-spin" />
+                    ) : (
+                      <Check className="h-[18px] w-[18px]" />
+                    )}
+                    Mavzuni yakunlash
                   </button>
                 </div>
               </div>
@@ -261,6 +278,7 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
                 setQuizState={setQuizState}
                 onFinish={() => completeStep(2)}
                 onBack={() => setTopicStep(1)}
+                finishing={finishing}
               />
             )}
           </div>
@@ -276,12 +294,14 @@ function QuizContent({
   setQuizState,
   onFinish,
   onBack,
+  finishing,
 }: {
   questions: QuizQuestion[]
   quizState: { idx: number; score: number; selected: number | null; finished: boolean }
   setQuizState: (s: { idx: number; score: number; selected: number | null; finished: boolean }) => void
   onFinish: () => void
   onBack: () => void
+  finishing: boolean
 }) {
   if (quizState.finished) {
     const pct = questions.length > 0 ? Math.round((quizState.score / questions.length) * 100) : 0
@@ -301,8 +321,9 @@ function QuizContent({
           >
             <RotateCw className="h-4 w-4" /> Qayta urinish
           </button>
-          <button onClick={onFinish} className="btn-sm px-5 py-2.5">
-            <Check className="h-4 w-4" /> Tugatish
+          <button onClick={onFinish} disabled={finishing} className="btn-sm px-5 py-2.5 disabled:opacity-60">
+            {finishing ? <RotateCw className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            Tugatish
           </button>
         </div>
       </div>
