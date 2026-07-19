@@ -19,6 +19,26 @@ import {
 
 export const dynamic = 'force-dynamic'
 
+// Uzbek number words for headline counts ("Yetti fan, oltita mavzu").
+const NUM_WORD = ['nol', 'bir', 'ikki', 'uch', 'to‘rt', 'besh', 'olti', 'yetti', 'sakkiz', 'to‘qqiz', 'o‘n']
+const NUM_TA = ['nolta', 'bitta', 'ikkita', 'uchta', 'to‘rtta', 'beshta', 'oltita', 'yettita', 'sakkizta', 'to‘qqizta', 'o‘nta']
+
+function numWord(n: number) {
+  if (n <= 10) return NUM_WORD[n]
+  if (n <= 19) return `o‘n ${NUM_WORD[n - 10]}`
+  return String(n)
+}
+
+function numTa(n: number) {
+  if (n <= 10) return NUM_TA[n]
+  if (n <= 19) return `o‘n ${NUM_TA[n - 10]}`
+  return `${n} ta`
+}
+
+function capitalize(s: string) {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
 const TELEGRAM = 'https://t.me/Med_Capsula'
 
 /* Floating capsule used in the hero. Pure CSS float animation. */
@@ -132,6 +152,7 @@ export default async function LandingPage() {
 
   const team = [
     { initial: 'Y', name: 'Yahyobek', role: 'Tibbiyot talabasi & Dasturchi', tone: 'green' as const },
+    { initial: 'A', name: 'Azizbek', role: 'Tibbiyot talabasi', tone: 'blue' as const },
   ]
 
   const faqs = [
@@ -450,14 +471,14 @@ export default async function LandingPage() {
           <div className="max-w-[54ch]">
             <span className="mc-label">Jamoa</span>
             <h2 className="mt-3.5 font-serif text-[clamp(32px,3.6vw,46px)] font-semibold leading-[1.06] tracking-[-0.02em] text-ink">
-              Bir talaba. Bitta g‘oya.
+              Ikki talaba. Bitta g‘oya.
             </h2>
             <p className="mt-4 text-[17px] leading-relaxed text-ink-mute">
-              MedCapsula‘ni men — tibbiyot talabasi — o‘z tajribamdan kelib chiqib yaratdim.
+              MedCapsula‘ni biz — tibbiyot talabalari — o‘z tajribamizdan kelib chiqib yaratdik.
             </p>
           </div>
 
-          <div className="mt-11 grid max-w-[520px] gap-6">
+          <div className="mt-11 grid gap-6 sm:grid-cols-2">
             {team.map(m => (
               <div
                 key={m.name}
@@ -495,7 +516,8 @@ export default async function LandingPage() {
             <div>
               <span className="mc-label">Fanlar</span>
               <h2 className="mt-3.5 max-w-[20ch] font-serif text-[clamp(30px,3.3vw,42px)] font-semibold leading-[1.1] tracking-[-0.02em] text-ink">
-                Yetti fan, oltita mavzu — va o‘sib bormoqda
+                {capitalize(numWord(subjects.length))} fan, {numTa(totalLessons)} mavzu — va o‘sib
+                bormoqda
               </h2>
             </div>
             <div className="flex gap-5 font-mono text-[13px] text-ink-faint">
