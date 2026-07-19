@@ -3,7 +3,7 @@
 import { useState, useRef, useCallback } from 'react'
 import {
   Bold, Italic, Heading, Highlighter, ListBullet, ListNumbered, Quote,
-  LinkIcon, Image, Minus, Eye, Upload, RotateCw, X,
+  LinkIcon, Image, Minus, Upload, RotateCw, X,
 } from '@/components/ui/icons'
 
 type ToolbarAction = 'bold' | 'italic' | 'h2' | 'h3' | 'highlight' | 'ul' | 'ol' | 'link' | 'hr' | 'quote'
@@ -54,10 +54,10 @@ const wrappers: Record<ToolbarAction, [string, string]> = {
 }
 
 export function MarkdownEditor({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [preview, setPreview] = useState(false)
   const [imgOpen, setImgOpen] = useState(false)
   const [imgUrl, setImgUrl] = useState('')
   const [imgAlt, setImgAlt] = useState('')
+  const [imgPos, setImgPos] = useState<'top' | 'cursor' | 'end'>('cursor')
   const [uploading, setUploading] = useState(false)
   const [uploadErr, setUploadErr] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -94,17 +94,24 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
     [insertAtCursor],
   )
 
-  // Drop an image into the text wherever the caret is: `![alt](url)` on its own line.
+  // Drop `![alt](url)` into the text at the chosen position: top, caret, or end.
   const insertImage = useCallback(
     (url: string, alt: string) => {
       if (!url.trim()) return
-      insertAtCursor(`\n\n![${alt.trim()}](${url.trim()})\n\n`)
+      const block = `![${alt.trim()}](${url.trim()})`
+      if (imgPos === 'top') {
+        onChange(`${block}\n\n${value.replace(/^\n+/, '')}`)
+      } else if (imgPos === 'end') {
+        onChange(`${value.replace(/\n+$/, '')}\n\n${block}\n`)
+      } else {
+        insertAtCursor(`\n\n${block}\n\n`)
+      }
       setImgOpen(false)
       setImgUrl('')
       setImgAlt('')
       setUploadErr('')
     },
-    [insertAtCursor],
+    [imgPos, value, onChange, insertAtCursor],
   )
 
   const handleUpload = useCallback(
@@ -175,18 +182,6 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
         >
           <Image className="h-4 w-4" /> Rasm
         </button>
-
-        <div className="ml-auto flex items-center">
-          <button
-            type="button"
-            onClick={() => setPreview(p => !p)}
-            className={`flex h-7 items-center gap-1.5 rounded-lg px-2 text-xs font-semibold transition-colors ${
-              preview ? 'bg-brand text-sand' : 'text-ink-mute hover:bg-[rgba(43,39,34,0.06)] hover:text-ink'
-            }`}
-          >
-            <Eye className="h-4 w-4" /> {preview ? 'Tahrir' : "Ko'rinish"}
-          </button>
-        </div>
       </div>
 
       {/* Image inserter panel */}
@@ -214,6 +209,31 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
               />
             </div>
           </div>
+          {/* Where the image goes */}
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            <span className="mr-1 text-[11px] font-semibold text-ink-mute">Joylashuv:</span>
+            {(
+              [
+                ['top', 'Matn boshiga'],
+                ['cursor', 'Kursor joyiga'],
+                ['end', 'Matn oxiriga'],
+              ] as const
+            ).map(([key, label]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setImgPos(key)}
+                className={`rounded-lg px-2.5 py-1.5 text-[11px] font-semibold transition-colors ${
+                  imgPos === key
+                    ? 'bg-brand text-sand'
+                    : 'border border-[rgba(43,39,34,0.14)] bg-sand-card text-ink-mute hover:border-brand hover:text-brand'
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
             <button
               type="button"
@@ -255,27 +275,37 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
           </div>
           {uploadErr && <p className="mt-2 text-[12px] text-[#b3493d]">{uploadErr}</p>}
           <p className="mt-2 text-[11px] leading-relaxed text-ink-faint">
-            Rasm kursordagi joyga qo'shiladi — matnning istalgan qismiga qo'ya olasiz. Maks. 5 MB.
+            &quot;Kursor joyiga&quot; — matn ichida kursor turgan joyga qo&apos;shadi (o&apos;rtaga qo&apos;yish uchun
+            avval matnda kerakli joyni bosing). Maks. 5 MB.
           </p>
         </div>
       )}
 
-      {/* Editor / preview */}
-      {preview ? (
-        <div className="min-h-[160px] bg-sand-card px-5 py-4">
-          <MarkdownRenderer content={value} />
+      {/* Live editor + preview side by side — type on the left, see the result on the right. */}
+      <div className="grid md:grid-cols-2">
+        <div className="flex flex-col">
+          <div className="flex items-center gap-1.5 border-b border-[rgba(43,39,34,0.08)] bg-sand px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint">
+            Yozish
+          </div>
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            rows={14}
+            className="min-h-[300px] w-full flex-1 resize-y bg-sand-card px-4 py-3 font-mono text-sm leading-relaxed text-ink focus:outline-none"
+            placeholder={'Konspekt matnini yozing…\n\n## Sarlavha\n**qalin**  *kursiv*  ==ajratilgan==\n- ro‘yxat\n\nRasm: yuqoridagi "Rasm" tugmasi'}
+          />
         </div>
-      ) : (
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={e => onChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          rows={12}
-          className="min-h-[160px] w-full resize-y bg-sand-card px-4 py-3 font-mono text-sm leading-relaxed text-ink focus:outline-none"
-          placeholder={'Konspekt matnini yozing…\n\n## Sarlavha\n**qalin**  *kursiv*  ==ajratilgan==\n- ro‘yxat\n\nRasm: yuqoridagi "Rasm" tugmasi'}
-        />
-      )}
+        <div className="flex flex-col border-t border-[rgba(43,39,34,0.1)] md:border-l md:border-t-0">
+          <div className="flex items-center gap-1.5 border-b border-[rgba(43,39,34,0.08)] bg-sand px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.08em] text-ink-faint">
+            Ko&apos;rinishi
+          </div>
+          <div className="min-h-[300px] flex-1 overflow-auto bg-sand-card px-5 py-4">
+            <MarkdownRenderer content={value} />
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
