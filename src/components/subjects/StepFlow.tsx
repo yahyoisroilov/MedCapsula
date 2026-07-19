@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
-import { MarkdownRenderer } from '@/components/ui/MarkdownEditor'
+import { MarkdownRenderer } from '@/components/ui/KonspektContent'
 import {
   Play,
   FileText,

@@ -222,23 +222,37 @@ body {
   font-family: var(--font-mono), monospace;
 }
 
-/* WYSIWYG Konspekt editor surface */
+/* WYSIWYG Konspekt editor surface (TipTap/ProseMirror) */
 .mc-wysiwyg {
-  position: relative;
   caret-color: #2F6B4F;
   cursor: text;
-}
-.mc-wysiwyg[data-empty='true']::before {
-  content: attr(data-placeholder);
-  position: absolute;
-  left: 20px;
-  top: 16px;
-  color: #a89f90;
-  pointer-events: none;
+  white-space: pre-wrap;
 }
 .mc-wysiwyg ::selection {
   background: rgba(47, 107, 79, 0.18);
 }
-.mc-wysiwyg b { font-weight: 700; color: #2b2722; }
-.mc-wysiwyg i { font-style: italic; }
-.mc-wysiwyg figure.mc-k-figure figcaption:focus { outline: none; }
+.mc-wysiwyg p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  height: 0;
+  color: #a89f90;
+  pointer-events: none;
+}
+.mc-wysiwyg img.ProseMirror-selectednode {
+  outline: 2px solid #2F6B4F;
+  outline-offset: 2px;
+}
+.mc-wysiwyg u { text-underline-offset: 2px; }
+
+/* Empty paragraphs (blank rows) keep their height everywhere Konspekt renders. */
+.mc-konspekt p:empty::before {
+  content: '\00a0';
+}
+.mc-konspekt img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(43, 39, 34, 0.1);
+  margin: 1.4em 0;
+}
