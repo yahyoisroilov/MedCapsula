@@ -123,7 +123,9 @@ function blockMd(node: Node): string | null {
         return domToMarkdown(node) || null
       }
       const text = inlineMd(node).replace(/\n{2,}/g, '\n').trim()
-      return text || null
+      if (text) return text
+      // Visible empty row (<p><br></p>) — keep it as the blank-row marker.
+      return node.querySelector('br') ? '\\' : null
     }
     default: {
       const text = inlineMd(node).trim()
@@ -166,8 +168,10 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
   const sync = useCallback(() => {
     const el = editorRef.current
     if (!el) return
-    const md = domToMarkdown(el)
-    el.dataset.empty = md.trim() ? 'false' : 'true'
+    let md = domToMarkdown(el)
+    // A document of only blank rows is an empty document.
+    if (!md.replace(/\\/g, '').trim()) md = ''
+    el.dataset.empty = md ? 'false' : 'true'
     emitted.current = md
     onChange(md)
   }, [onChange])
@@ -525,6 +529,13 @@ export function renderMarkdown(src: string) {
       continue
     }
 
+    // Intentional blank row (WYSIWYG empty paragraph marker).
+    if (t === '\\') {
+      out.push('<p><br/></p>')
+      i++
+      continue
+    }
+
     // Block image (own line) → figure with optional caption from alt text.
     const img = t.match(IMG_LINE)
     if (img) {
@@ -591,7 +602,7 @@ export function renderMarkdown(src: string) {
     const buf: string[] = []
     while (i < lines.length) {
       const l = lines[i].trim()
-      if (!l || BLOCK_START.test(l) || IMG_LINE.test(l)) break
+      if (!l || l === '\\' || BLOCK_START.test(l) || IMG_LINE.test(l)) break
       buf.push(inline(l))
       i++
     }
