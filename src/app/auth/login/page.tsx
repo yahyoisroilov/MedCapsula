@@ -56,6 +56,11 @@ function LoginForm() {
         <form onSubmit={handleSubmit} className="space-y-3">
           <Input id="email" name="email" type="email" placeholder="Email" required />
           <Input id="password" name="password" type="password" placeholder="Parol" required />
+          <div className="flex justify-end">
+            <Link href="/auth/forgot" className="text-[13px] font-medium text-ink-mute hover:text-brand">
+              Parolni unutdingizmi?
+            </Link>
+          </div>
           <Button type="submit" variant="primary" size="lg" loading={loading} className="w-full">
             Kirish
           </Button>
