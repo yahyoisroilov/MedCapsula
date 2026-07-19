@@ -122,3 +122,102 @@ body {
   .mc-cap-sheen,
   .mc-cap-dot { animation: none !important; }
 }
+
+/* ─────────────  Konspekt (lesson notes) rich content  ───────────── */
+.mc-konspekt {
+  font-size: 16.5px;
+  line-height: 1.75;
+  color: var(--ink-soft, #3a352d);
+}
+.mc-konspekt > * + * { margin-top: 0.9em; }
+.mc-konspekt h2 {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.42em;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  color: #2b2722;
+  margin-top: 1.5em;
+}
+.mc-konspekt h3 {
+  font-family: var(--font-serif), Georgia, serif;
+  font-size: 1.18em;
+  font-weight: 700;
+  color: #2b2722;
+  margin-top: 1.3em;
+}
+.mc-konspekt h4 {
+  font-size: 0.82em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #2F6B4F;
+  margin-top: 1.2em;
+}
+.mc-konspekt h2:first-child,
+.mc-konspekt h3:first-child,
+.mc-konspekt h4:first-child { margin-top: 0; }
+.mc-konspekt p { margin: 0; }
+.mc-konspekt strong { font-weight: 700; color: #2b2722; }
+.mc-konspekt em { font-style: italic; }
+.mc-konspekt mark {
+  background: rgba(47, 107, 79, 0.16);
+  color: #235942;
+  padding: 0.05em 0.28em;
+  border-radius: 5px;
+  font-weight: 600;
+}
+.mc-konspekt a {
+  color: #2F6B4F;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.mc-konspekt a:hover { color: #235942; }
+.mc-konspekt ul,
+.mc-konspekt ol { padding-left: 1.35em; }
+.mc-konspekt ul { list-style: none; }
+.mc-konspekt ul > li { position: relative; padding-left: 0.35em; }
+.mc-konspekt ul > li::before {
+  content: '';
+  position: absolute;
+  left: -0.95em;
+  top: 0.72em;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: #2F6B4F;
+}
+.mc-konspekt ol { list-style: decimal; }
+.mc-konspekt ol > li::marker { color: #2F6B4F; font-weight: 700; }
+.mc-konspekt li { margin: 0.3em 0; }
+.mc-konspekt blockquote {
+  border-left: 3px solid #2F6B4F;
+  background: rgba(47, 107, 79, 0.05);
+  padding: 0.7em 1.1em;
+  border-radius: 0 12px 12px 0;
+  color: #4a453c;
+  font-style: italic;
+}
+.mc-konspekt hr {
+  border: 0;
+  border-top: 1px solid rgba(43, 39, 34, 0.12);
+  margin: 1.6em 0;
+}
+.mc-konspekt .mc-k-figure { margin: 1.4em 0; }
+.mc-konspekt .mc-k-figure img,
+.mc-konspekt .mc-k-inline-img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 14px;
+  border: 1px solid rgba(43, 39, 34, 0.1);
+}
+.mc-konspekt .mc-k-inline-img { display: inline-block; vertical-align: middle; border-radius: 8px; }
+.mc-konspekt .mc-k-figure figcaption {
+  margin-top: 0.6em;
+  text-align: center;
+  font-size: 0.82em;
+  color: #8a8377;
+  font-family: var(--font-mono), monospace;
+}

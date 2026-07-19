@@ -125,6 +125,20 @@ export const RotateCw = (p: IconProps) => (
 export const Upload = (p: IconProps) => (
   <Svg {...p}><path d="M12 16V4" /><path d="m7 9 5-5 5 5" /><path d="M5 20h14" /></Svg>
 )
+export const Image = (p: IconProps) => (
+  <Svg {...p}>
+    <rect x="3" y="3" width="18" height="18" rx="2.5" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <path d="m21 15-5-5L5 21" />
+  </Svg>
+)
+export const Highlighter = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="m9 11-6 6v3h3l6-6" />
+    <path d="M13 7l4 4" />
+    <path d="M15 5a2.5 2.5 0 0 1 3.5 0l.5.5a2.5 2.5 0 0 1 0 3.5l-6 6-4-4z" />
+  </Svg>
+)
 export const Bold = (p: IconProps) => (
   <Svg {...p}><path d="M7 5h6a3.5 3.5 0 0 1 0 7H7z" /><path d="M7 12h7a3.5 3.5 0 0 1 0 7H7z" /></Svg>
 )

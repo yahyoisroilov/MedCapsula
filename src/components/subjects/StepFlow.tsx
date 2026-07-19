@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { cn } from '@/lib/utils'
+import { MarkdownRenderer } from '@/components/ui/MarkdownEditor'
 import {
   Play,
   FileText,
@@ -18,6 +19,7 @@ interface QuizQuestion {
   a: string[]
   correct: number
   exp?: string
+  img?: string
 }
 
 interface StepFlowProps {
@@ -211,13 +213,11 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
         {topicStep === 1 && (
           <div>
             {lesson.notesContent ? (
-              <div className="mc-card p-7">
-                <div className="mb-4 flex items-center gap-2 font-mono text-[12px] uppercase tracking-[0.06em] text-brand-soft">
+              <div className="mc-card p-7 sm:p-8">
+                <div className="mb-5 flex items-center gap-2 border-b border-[rgba(43,39,34,0.08)] pb-4 font-mono text-[12px] uppercase tracking-[0.06em] text-brand-soft">
                   <FileText className="h-4 w-4 text-brand" /> Konspekt
                 </div>
-                <div className="whitespace-pre-wrap text-[16.5px] leading-[1.7] text-ink-soft">
-                  {lesson.notesContent}
-                </div>
+                <MarkdownRenderer content={lesson.notesContent} />
               </div>
             ) : (
               <EmptyState title="Konspekt hali yo‘q" sub="Bu mavzu uchun matn keyinroq qo‘shiladi." />
@@ -324,6 +324,14 @@ function QuizContent({
       </div>
 
       <div className="mc-card mb-4 p-6">
+        {q.img && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={q.img}
+            alt=""
+            className="mb-4 max-h-[320px] w-full rounded-xl border border-[rgba(43,39,34,0.1)] object-contain"
+          />
+        )}
         <h3 className="font-serif text-[20px] font-semibold leading-snug text-ink">{q.q}</h3>
       </div>
 

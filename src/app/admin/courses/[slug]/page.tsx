@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor'
+import { ImageField } from '@/components/ui/ImageField'
 import { ArrowLeft, Plus, Check, Trash, X, RotateCw } from '@/components/ui/icons'
 
 export default function AdminCourseDetailPage() {
@@ -278,6 +279,13 @@ function QuizEditor({ value, onChange }: { value: string; onChange: (v: string) 
               <button onClick={() => removeQuestion(qi)} className="text-ink-faint hover:text-[#b3493d] p-1">
                 <X className="h-4 w-4" />
               </button>
+            </div>
+            <div className="ml-8 mb-2">
+              <ImageField
+                value={q.img || ''}
+                onChange={url => updateQuestion(qi, 'img', url)}
+                label="Savol rasmi"
+              />
             </div>
             <div className="space-y-1 ml-8">
               {q.a.map((a: string, ai: number) => (
