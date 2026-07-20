@@ -6,7 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor'
 import { ImageField } from '@/components/ui/ImageField'
-import { ArrowLeft, Plus, Check, Trash, X, RotateCw } from '@/components/ui/icons'
+import { ArrowLeft, Plus, Check, Trash, X, RotateCw, ChevronRight } from '@/components/ui/icons'
 
 export default function AdminCourseDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -17,6 +17,8 @@ export default function AdminCourseDetailPage() {
   const [saving, setSaving] = useState(false)
   const [checking, setChecking] = useState(true)
   const [error, setError] = useState('')
+  // The topic that was just created stays expanded; the rest start collapsed.
+  const [justAddedId, setJustAddedId] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -73,6 +75,7 @@ export default function AdminCourseDetailPage() {
     if (res.ok) {
       const data = await res.json()
       setLessons([...lessons, data])
+      setJustAddedId(data.id)
     } else {
       setError('Mavzu qo\'shishda xatolik')
     }
@@ -205,6 +208,7 @@ export default function AdminCourseDetailPage() {
             key={lesson.id}
             lesson={lesson}
             index={idx}
+            defaultOpen={lesson.id === justAddedId}
             onChange={(field, value) => updateLesson(idx, field, value)}
             onSave={() => saveLesson(lesson)}
             onDelete={() => deleteLesson(lesson)}
@@ -315,18 +319,38 @@ function QuizEditor({ value, onChange }: { value: string; onChange: (v: string) 
   )
 }
 
-function LessonEditor({ lesson, index, onChange, onSave, onDelete }: {
-  lesson: any; index: number; onChange: (field: string, value: any) => void; onSave: () => void; onDelete: () => void
+function LessonEditor({ lesson, index, defaultOpen = false, onChange, onSave, onDelete }: {
+  lesson: any; index: number; defaultOpen?: boolean; onChange: (field: string, value: any) => void; onSave: () => void; onDelete: () => void
 }) {
+  const [open, setOpen] = useState(defaultOpen)
+
   return (
     <div className="mc-card p-5">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
+      <div className={`flex items-center justify-between ${open ? 'mb-4' : ''}`}>
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setOpen(o => !o)}
+            title={open ? 'Yig\'ish' : 'Ochish'}
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-ink-mute transition-colors hover:bg-[rgba(43,39,34,0.06)] hover:text-ink"
+          >
+            <ChevronRight className={`h-4 w-4 transition-transform ${open ? 'rotate-90' : ''}`} />
+          </button>
           <span className="h-8 w-8 rounded-lg bg-brand text-sand flex items-center justify-center text-sm font-bold shrink-0">{index + 1}</span>
-          <input value={lesson.title} onChange={e => onChange('title', e.target.value)}
-            className="font-serif font-semibold text-ink bg-transparent border-b border-transparent hover:border-[rgba(43,39,34,0.2)] focus:border-brand outline-none text-base" />
+          {open ? (
+            <input value={lesson.title} onChange={e => onChange('title', e.target.value)}
+              className="min-w-0 flex-1 font-serif font-semibold text-ink bg-transparent border-b border-transparent hover:border-[rgba(43,39,34,0.2)] focus:border-brand outline-none text-base" />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              className="min-w-0 flex-1 truncate text-left font-serif font-semibold text-ink text-base hover:text-brand"
+            >
+              {lesson.title || 'Nomsiz mavzu'}
+            </button>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button onClick={onSave} className="inline-flex items-center gap-1 text-xs font-semibold text-brand hover:text-brand-dark bg-brand-tint px-3 py-1.5 rounded-lg transition">
             <Check className="h-3.5 w-3.5" /> Saqlash
           </button>
@@ -336,7 +360,7 @@ function LessonEditor({ lesson, index, onChange, onSave, onDelete }: {
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className={`space-y-3 ${open ? '' : 'hidden'}`}>
         <div>
           <label className="block text-xs font-semibold text-ink-mute mb-1">Tavsif</label>
           <input value={lesson.description || ''} onChange={e => onChange('description', e.target.value)}

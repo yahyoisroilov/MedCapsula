@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useReducer } from 'react'
 import { useEditor, EditorContent, type Editor } from '@tiptap/react'
+import { BubbleMenu } from '@tiptap/react/menus'
 import StarterKit from '@tiptap/starter-kit'
 import TipImage from '@tiptap/extension-image'
 import Highlight from '@tiptap/extension-highlight'
@@ -202,32 +203,74 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
     [imgAlt, insertImage],
   )
 
+  // One format button, shared by the fixed toolbar and the floating (bubble) toolbar.
+  const FormatButton = ({ a, dark = false }: { a: (typeof groups)[number]['items'][number]; dark?: boolean }) => {
+    const active = editor ? isActionActive(editor, a.key) : false
+    return (
+      <button
+        type="button"
+        onMouseDown={e => e.preventDefault()} /* keep the editor selection */
+        onClick={() => applyAction(a.key)}
+        title={a.label}
+        className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+          dark
+            ? active
+              ? 'bg-brand text-sand'
+              : 'text-sand/80 hover:bg-white/10 hover:text-sand'
+            : active
+              ? 'bg-brand-tint text-brand'
+              : 'text-ink-mute hover:bg-[rgba(43,39,34,0.06)] hover:text-ink'
+        }`}
+      >
+        <a.Icon className={a.key === 'h3' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+      </button>
+    )
+  }
+
   return (
     <div className="overflow-hidden rounded-xl border border-[rgba(43,39,34,0.12)]">
+      {/* Floating toolbar — appears over a text selection, like Microsoft Word. */}
+      {editor && (
+        <BubbleMenu
+          editor={editor}
+          options={{ placement: 'top', offset: 8 }}
+          shouldShow={({ editor: e, state }) =>
+            e.isEditable && !state.selection.empty && !e.isActive('image')
+          }
+          className="flex items-center gap-0.5 rounded-xl border border-black/10 bg-ink px-1 py-1 shadow-[0_8px_24px_rgba(43,39,34,0.28)]"
+        >
+          {groups.map((g, gi) => (
+            <div key={g.label} className="flex items-center">
+              {gi > 0 && <span className="mx-0.5 h-5 w-px bg-white/15" />}
+              {g.items.map(a => (
+                <FormatButton key={a.key} a={a} dark />
+              ))}
+            </div>
+          ))}
+          <span className="mx-0.5 h-5 w-px bg-white/15" />
+          <button
+            type="button"
+            onMouseDown={e => e.preventDefault()}
+            onClick={() => {
+              setImgPos('cursor')
+              fileRef.current?.click()
+            }}
+            title="Rasm qo'shish (kursor joyiga)"
+            className="flex h-7 w-7 items-center justify-center rounded-lg text-sand/80 transition-colors hover:bg-white/10 hover:text-sand"
+          >
+            <ImageIcon className="h-4 w-4" />
+          </button>
+        </BubbleMenu>
+      )}
+
       {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-x-1 gap-y-1.5 border-b border-[rgba(43,39,34,0.1)] bg-sand px-2 py-1.5">
         {groups.map((g, gi) => (
           <div key={g.label} className="flex items-center">
             {gi > 0 && <span className="mx-1 h-5 w-px bg-[rgba(43,39,34,0.12)]" />}
-            {g.items.map(a => {
-              const active = editor ? isActionActive(editor, a.key) : false
-              return (
-                <button
-                  key={a.key}
-                  type="button"
-                  onMouseDown={e => e.preventDefault()} /* keep the editor selection */
-                  onClick={() => applyAction(a.key)}
-                  title={a.label}
-                  className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
-                    active
-                      ? 'bg-brand-tint text-brand'
-                      : 'text-ink-mute hover:bg-[rgba(43,39,34,0.06)] hover:text-ink'
-                  }`}
-                >
-                  <a.Icon className={a.key === 'h3' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
-                </button>
-              )
-            })}
+            {g.items.map(a => (
+              <FormatButton key={a.key} a={a} />
+            ))}
           </div>
         ))}
 
