@@ -49,6 +49,43 @@ const groups: { label: string; items: { key: ToolbarAction; label: string; Icon:
   },
 ]
 
+// One format button, shared by the fixed toolbar and the floating (bubble) one.
+// Defined at module scope (NOT inside MarkdownEditor) so its component identity
+// is stable — otherwise React remounts every button on each editor transaction,
+// which detaches them mid-click and the styles never apply.
+function FormatButton({
+  editor,
+  onApply,
+  a,
+  dark = false,
+}: {
+  editor: Editor | null
+  onApply: (key: ToolbarAction) => void
+  a: (typeof groups)[number]['items'][number]
+  dark?: boolean
+}) {
+  const active = editor ? isActionActive(editor, a.key) : false
+  return (
+    <button
+      type="button"
+      onMouseDown={e => e.preventDefault()} /* keep the editor selection */
+      onClick={() => onApply(a.key)}
+      title={a.label}
+      className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
+        dark
+          ? active
+            ? 'bg-brand text-sand'
+            : 'text-sand/80 hover:bg-white/10 hover:text-sand'
+          : active
+            ? 'bg-brand-tint text-brand'
+            : 'text-ink-mute hover:bg-[rgba(43,39,34,0.06)] hover:text-ink'
+      }`}
+    >
+      <a.Icon className={a.key === 'h3' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+    </button>
+  )
+}
+
 function isActionActive(editor: Editor, key: ToolbarAction): boolean {
   switch (key) {
     case 'bold':
@@ -109,9 +146,12 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
       const html = e.isEmpty ? '' : e.getHTML()
       emitted.current = html
       onChange(html)
+      bump() // refresh toolbar active states after a mark/content change
     },
+    // Only bump on selection changes — NOT on every transaction. The BubbleMenu
+    // dispatches position/meta transactions, and bumping on those creates an
+    // infinite render loop ("Maximum update depth exceeded").
     onSelectionUpdate: () => bump(),
-    onTransaction: () => bump(),
   })
 
   // External value change (e.g. lesson reloaded) → reset editor content.
@@ -203,30 +243,6 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
     [imgAlt, insertImage],
   )
 
-  // One format button, shared by the fixed toolbar and the floating (bubble) toolbar.
-  const FormatButton = ({ a, dark = false }: { a: (typeof groups)[number]['items'][number]; dark?: boolean }) => {
-    const active = editor ? isActionActive(editor, a.key) : false
-    return (
-      <button
-        type="button"
-        onMouseDown={e => e.preventDefault()} /* keep the editor selection */
-        onClick={() => applyAction(a.key)}
-        title={a.label}
-        className={`flex h-7 w-7 items-center justify-center rounded-lg transition-colors ${
-          dark
-            ? active
-              ? 'bg-brand text-sand'
-              : 'text-sand/80 hover:bg-white/10 hover:text-sand'
-            : active
-              ? 'bg-brand-tint text-brand'
-              : 'text-ink-mute hover:bg-[rgba(43,39,34,0.06)] hover:text-ink'
-        }`}
-      >
-        <a.Icon className={a.key === 'h3' ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
-      </button>
-    )
-  }
-
   return (
     <div className="overflow-hidden rounded-xl border border-[rgba(43,39,34,0.12)]">
       {/* Floating toolbar — appears over a text selection, like Microsoft Word. */}
@@ -243,7 +259,7 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
             <div key={g.label} className="flex items-center">
               {gi > 0 && <span className="mx-0.5 h-5 w-px bg-white/15" />}
               {g.items.map(a => (
-                <FormatButton key={a.key} a={a} dark />
+                <FormatButton key={a.key} editor={editor} onApply={applyAction} a={a} dark />
               ))}
             </div>
           ))}
@@ -269,7 +285,7 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
           <div key={g.label} className="flex items-center">
             {gi > 0 && <span className="mx-1 h-5 w-px bg-[rgba(43,39,34,0.12)]" />}
             {g.items.map(a => (
-              <FormatButton key={a.key} a={a} />
+              <FormatButton key={a.key} editor={editor} onApply={applyAction} a={a} />
             ))}
           </div>
         ))}
