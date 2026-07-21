@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { BookOpen, User, GraduationCap, RotateCw } from '@/components/ui/icons'
+import { CapsuleLoader } from '@/components/ui/CapsuleLoader'
 
 export default function AdminPage() {
   const router = useRouter()
@@ -32,7 +33,7 @@ export default function AdminPage() {
   }, [router])
 
   if (checking) {
-    return <div className="relative z-[2] mx-auto max-w-shell px-5 py-20 text-center text-ink-faint sm:px-10"><RotateCw className="mx-auto h-6 w-6 animate-spin" /></div>
+    return <div className="relative z-[2] flex min-h-[60vh] items-center justify-center px-5 sm:px-10"><CapsuleLoader size="md" /></div>
   }
 
   if (!session) {

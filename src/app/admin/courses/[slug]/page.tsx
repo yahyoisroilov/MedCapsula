@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor'
 import { ImageField } from '@/components/ui/ImageField'
 import { ArrowLeft, Plus, Check, Trash, X, RotateCw, ChevronRight } from '@/components/ui/icons'
+import { CapsuleLoader } from '@/components/ui/CapsuleLoader'
 
 export default function AdminCourseDetailPage() {
   const { slug } = useParams<{ slug: string }>()
@@ -113,7 +114,7 @@ export default function AdminCourseDetailPage() {
   }
 
   if (checking) {
-    return <div className="relative z-[2] mx-auto max-w-shell px-5 py-20 text-center text-ink-faint sm:px-10"><RotateCw className="mx-auto h-6 w-6 animate-spin" /></div>
+    return <div className="relative z-[2] flex min-h-[60vh] items-center justify-center px-5 sm:px-10"><CapsuleLoader size="md" /></div>
   }
 
   if (!session || !course) {

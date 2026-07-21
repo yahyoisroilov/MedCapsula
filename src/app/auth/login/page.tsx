@@ -3,9 +3,18 @@
 import { Suspense, useState } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
+import { CapsuleLoader } from '@/components/ui/CapsuleLoader'
 import { CapsuleMark } from '@/components/ui/icons'
+
+function loginErrorUz(message: string): string {
+  if (/invalid login credentials/i.test(message)) return 'Email yoki parol noto‘g‘ri'
+  if (/not confirmed/i.test(message)) return 'Email tasdiqlanmagan'
+  if (/rate|too many/i.test(message)) return 'Juda ko‘p urinish. Birozdan so‘ng qayta urinib ko‘ring.'
+  return 'Kirishda xatolik. Qayta urinib ko‘ring.'
+}
 
 function LoginForm() {
   const router = useRouter()
@@ -19,23 +28,24 @@ function LoginForm() {
     setLoading(true)
 
     const form = new FormData(e.currentTarget)
-    const res = await fetch('/api/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        email: form.get('email'),
-        password: form.get('password'),
-      }),
+    // Sign in with the BROWSER client so the session is live in the browser
+    // right away (and its cookies are what the middleware reads). Doing this on
+    // the server left the client cache stale until a manual refresh.
+    const supabase = createClient()
+    const { error: err } = await supabase.auth.signInWithPassword({
+      email: String(form.get('email') || ''),
+      password: String(form.get('password') || ''),
     })
 
-    if (res.ok) {
-      const redirect = searchParams.get('redirect') || '/subjects'
-      router.replace(redirect)
-    } else {
-      const data = await res.json()
-      setError(data.error || 'Kirishda xatolik')
+    if (err) {
+      setError(loginErrorUz(err.message))
       setLoading(false)
+      return
     }
+
+    const redirect = searchParams.get('redirect') || '/subjects'
+    router.replace(redirect)
+    router.refresh() // revalidate server components with the new auth cookies
   }
 
   return (
@@ -81,7 +91,7 @@ export default function LoginPage() {
     <Suspense
       fallback={
         <div className="relative z-[2] flex min-h-[70vh] items-center justify-center">
-          <p className="font-mono text-sm text-ink-faint">Yuklanmoqda…</p>
+          <CapsuleLoader size="md" />
         </div>
       }
     >

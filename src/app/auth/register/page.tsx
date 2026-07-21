@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { CapsuleMark } from '@/components/ui/icons'
@@ -29,17 +30,16 @@ export default function RegisterPage() {
     })
 
     if (res.ok) {
-      // Auto-login after signup
-      const loginRes = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: form.get('email'),
-          password: form.get('password'),
-        }),
+      // Auto-login on the browser client so the session is live immediately
+      // (matches the login page — avoids the stale-until-refresh problem).
+      const supabase = createClient()
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email: String(form.get('email') || ''),
+        password: String(form.get('password') || ''),
       })
-      if (loginRes.ok) {
+      if (!signInErr) {
         router.replace('/')
+        router.refresh()
         return
       }
       router.replace('/auth/login')

@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { ArrowRight, ChevronRight } from '@/components/ui/icons'
+import { CapsuleLoader } from '@/components/ui/CapsuleLoader'
 
 export default function DashboardPage() {
   const [session, setSession] = useState<any>(null)
+  const [authChecked, setAuthChecked] = useState(false)
   const [courses, setCourses] = useState<any[]>([])
   const [progress, setProgress] = useState<any[]>([])
 
@@ -13,6 +15,8 @@ export default function DashboardPage() {
     fetch('/api/auth/me')
       .then(r => (r.ok ? r.json() : null))
       .then(setSession)
+      .catch(() => setSession(null))
+      .finally(() => setAuthChecked(true))
   }, [])
 
   useEffect(() => {
@@ -28,6 +32,16 @@ export default function DashboardPage() {
         .then(setProgress)
     }
   }, [session])
+
+  // Still checking the session — show the branded loader, not the "login
+  // required" card (which would otherwise flash for logged-in users).
+  if (!authChecked) {
+    return (
+      <div className="relative z-[2] flex min-h-[60vh] items-center justify-center px-5 sm:px-10">
+        <CapsuleLoader size="md" />
+      </div>
+    )
+  }
 
   if (!session) {
     return (
