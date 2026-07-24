@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import { Image, Upload, RotateCw, X } from '@/components/ui/icons'
+import { uploadFile } from '@/lib/upload'
 
 /**
  * Compact single-image control for admin forms (e.g. test questions).
@@ -26,12 +27,8 @@ export function ImageField({
     setUploading(true)
     setErr('')
     try {
-      const fd = new FormData()
-      fd.append('file', file)
-      const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-      const data = await res.json().catch(() => ({}))
-      if (!res.ok) throw new Error(data.error || 'Yuklashda xatolik')
-      onChange(data.url)
+      const publicUrl = await uploadFile(file)
+      onChange(publicUrl)
       setOpen(false)
       setUrl('')
     } catch (e) {

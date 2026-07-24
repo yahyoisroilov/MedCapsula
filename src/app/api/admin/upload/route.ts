@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
 import { randomUUID } from 'crypto'
+import { PutObjectCommand } from '@aws-sdk/client-s3'
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { getR2Client, isR2Configured, publicUrlFor, R2_BUCKET } from '@/lib/r2'
 
-const BUCKET = 'lesson-images'
-const MAX_SIZE = 5 * 1024 * 1024 // 5 MB
-const ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/svg+xml']
+// Uploads go straight from the browser to Cloudflare R2. This route only
+// checks that the caller is an admin and hands back a short-lived presigned
+// PUT URL — the file bytes never pass through Vercel, so the 4.5 MB function
+// payload limit does not apply.
 
-const EXT: Record<string, string> = {
+const IMAGE_TYPES: Record<string, string> = {
   'image/png': 'png',
   'image/jpeg': 'jpg',
   'image/gif': 'gif',
@@ -15,9 +18,17 @@ const EXT: Record<string, string> = {
   'image/svg+xml': 'svg',
 }
 
-// Image uploads for Konspekt and test questions. Uses Supabase Storage
-// (already configured for this project) — the public bucket is created on
-// first use, so no manual setup is needed.
+const VIDEO_TYPES: Record<string, string> = {
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
+}
+
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024 // 10 MB
+const MAX_VIDEO_SIZE = 500 * 1024 * 1024 // 500 MB
+
+const URL_TTL_SECONDS = 60 * 5 // presigned URL is valid for 5 minutes
+
 export async function POST(request: Request) {
   const supabase = await createClient()
   const {
@@ -32,48 +43,55 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
   }
 
-  const formData = await request.formData().catch(() => null)
-  const file = formData?.get('file')
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: 'Fayl topilmadi' }, { status: 400 })
-  }
-  if (!ALLOWED_TYPES.includes(file.type)) {
+  if (!isR2Configured()) {
     return NextResponse.json(
-      { error: 'Faqat rasm fayllari (PNG, JPG, GIF, WEBP, SVG)' },
+      { error: 'Fayl saqlash sozlanmagan (R2 environment variables)' },
+      { status: 500 },
+    )
+  }
+
+  const body = await request.json().catch(() => null)
+  const contentType = typeof body?.contentType === 'string' ? body.contentType : ''
+  const size = Number(body?.size)
+
+  const isImage = contentType in IMAGE_TYPES
+  const isVideo = contentType in VIDEO_TYPES
+  if (!isImage && !isVideo) {
+    return NextResponse.json(
+      { error: 'Faqat rasm (PNG, JPG, GIF, WEBP, SVG) yoki video (MP4, WEBM, MOV)' },
       { status: 400 },
     )
   }
-  if (file.size > MAX_SIZE) {
-    return NextResponse.json({ error: 'Rasm hajmi 5 MB dan oshmasligi kerak' }, { status: 400 })
+
+  if (!Number.isFinite(size) || size <= 0) {
+    return NextResponse.json({ error: 'Fayl hajmi notoʻgʻri' }, { status: 400 })
   }
 
-  const admin = createAdminClient()
-
-  // Ensure the public bucket exists (idempotent; ignore "already exists" races).
-  const { data: bucket } = await admin.storage.getBucket(BUCKET)
-  if (!bucket) {
-    await admin.storage
-      .createBucket(BUCKET, { public: true, fileSizeLimit: MAX_SIZE, allowedMimeTypes: ALLOWED_TYPES })
-      .catch(() => {})
+  const maxSize = isImage ? MAX_IMAGE_SIZE : MAX_VIDEO_SIZE
+  if (size > maxSize) {
+    const mb = Math.round(maxSize / (1024 * 1024))
+    return NextResponse.json(
+      { error: `Fayl hajmi ${mb} MB dan oshmasligi kerak` },
+      { status: 400 },
+    )
   }
 
-  const safeName =
-    (file.name || 'image')
-      .toLowerCase()
-      .replace(/\.[^.]+$/, '')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .slice(0, 40) || 'image'
-  const path = `konspekt/${safeName}-${randomUUID().slice(0, 8)}.${EXT[file.type] || 'png'}`
+  const ext = isImage ? IMAGE_TYPES[contentType] : VIDEO_TYPES[contentType]
+  const key = `${isImage ? 'images' : 'videos'}/${randomUUID()}.${ext}`
 
-  const bytes = new Uint8Array(await file.arrayBuffer())
-  const { error } = await admin.storage
-    .from(BUCKET)
-    .upload(path, bytes, { contentType: file.type, upsert: true })
-  if (error) {
-    return NextResponse.json({ error: `Yuklashda xatolik: ${error.message}` }, { status: 500 })
+  // ContentType and ContentLength are signed, so the browser's PUT must match
+  // exactly — a leaked URL cannot be reused to upload something bigger.
+  const command = new PutObjectCommand({
+    Bucket: R2_BUCKET,
+    Key: key,
+    ContentType: contentType,
+    ContentLength: size,
+  })
+
+  try {
+    const uploadUrl = await getSignedUrl(getR2Client(), command, { expiresIn: URL_TTL_SECONDS })
+    return NextResponse.json({ uploadUrl, publicUrl: publicUrlFor(key), key })
+  } catch {
+    return NextResponse.json({ error: 'Yuklash havolasini olishda xatolik' }, { status: 500 })
   }
-
-  const { data } = admin.storage.from(BUCKET).getPublicUrl(path)
-  return NextResponse.json({ url: data.publicUrl })
 }

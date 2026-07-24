@@ -8,6 +8,7 @@ import TipImage from '@tiptap/extension-image'
 import Highlight from '@tiptap/extension-highlight'
 import Placeholder from '@tiptap/extension-placeholder'
 import { contentToHtml } from '@/components/ui/KonspektContent'
+import { uploadFile } from '@/lib/upload'
 import {
   Bold, Italic, Heading, Highlighter, ListBullet, ListNumbered, Quote,
   LinkIcon, Image as ImageIcon, Minus, Upload, RotateCw, X,
@@ -228,12 +229,8 @@ export function MarkdownEditor({ value, onChange }: { value: string; onChange: (
       setUploading(true)
       setUploadErr('')
       try {
-        const fd = new FormData()
-        fd.append('file', file)
-        const res = await fetch('/api/admin/upload', { method: 'POST', body: fd })
-        const data = await res.json().catch(() => ({}))
-        if (!res.ok) throw new Error(data.error || 'Yuklashda xatolik')
-        insertImage(data.url, imgAlt || file.name.replace(/\.[^.]+$/, ''))
+        const publicUrl = await uploadFile(file)
+        insertImage(publicUrl, imgAlt || file.name.replace(/\.[^.]+$/, ''))
       } catch (e) {
         setUploadErr(e instanceof Error ? e.message : 'Yuklashda xatolik')
       } finally {
