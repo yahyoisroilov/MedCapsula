@@ -14,6 +14,7 @@ import {
   Trophy,
   RotateCw,
 } from '@/components/ui/icons'
+import { normalizeVideoUrl, isYouTubeUrl } from '@/lib/video'
 
 interface QuizQuestion {
   q: string
@@ -132,9 +133,10 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
   }
 
   const questions = parseQuiz(lesson.quiz)
-  const isYouTube =
-    lesson.videoUrl &&
-    (lesson.videoUrl.includes('youtube.com') || lesson.videoUrl.includes('youtu.be'))
+  // Normalise on render too, so lessons saved before VideoField existed (with
+  // a watch?v= or youtu.be link) still play instead of showing a blank iframe.
+  const videoUrl = normalizeVideoUrl(lesson.videoUrl || '')
+  const isYouTube = isYouTubeUrl(videoUrl)
 
   return (
     <div>
@@ -189,7 +191,7 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
         {/* ── Step 0 · Video ── */}
         {topicStep === 0 && (
           <div>
-            {lesson.videoUrl ? (
+            {videoUrl ? (
               <div
                 className="relative w-full overflow-hidden rounded-2xl border border-[rgba(43,39,34,0.1)] bg-black"
                 style={{ aspectRatio: '16/9' }}
@@ -197,13 +199,13 @@ export function StepFlow({ lesson, courseId, slug, lessonIndex, initialStep }: S
                 {isYouTube ? (
                   <iframe
                     className="absolute inset-0 h-full w-full"
-                    src={lesson.videoUrl}
+                    src={videoUrl}
                     title={lesson.title}
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
                   />
                 ) : (
-                  <video className="absolute inset-0 h-full w-full" src={lesson.videoUrl} controls playsInline />
+                  <video className="absolute inset-0 h-full w-full" src={videoUrl} controls playsInline />
                 )}
               </div>
             ) : (

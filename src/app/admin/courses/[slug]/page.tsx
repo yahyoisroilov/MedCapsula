@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { MarkdownEditor } from '@/components/ui/MarkdownEditor'
 import { ImageField } from '@/components/ui/ImageField'
+import { VideoField } from '@/components/ui/VideoField'
 import { ArrowLeft, Plus, Check, Trash, X, RotateCw, ChevronRight } from '@/components/ui/icons'
 import { CapsuleLoader } from '@/components/ui/CapsuleLoader'
 
@@ -368,10 +369,8 @@ function LessonEditor({ lesson, index, defaultOpen = false, onChange, onSave, on
             className="w-full bg-sand border border-[rgba(43,39,34,0.12)] rounded-xl px-4 py-2 text-sm text-ink focus:outline-none focus:border-brand" />
         </div>
         <div>
-          <label className="block text-xs font-semibold text-ink-mute mb-1">Video URL (YouTube embed)</label>
-          <input value={lesson.video_url || ''} onChange={e => onChange('video_url', e.target.value)}
-            placeholder="https://www.youtube.com/embed/..."
-            className="w-full bg-sand border border-[rgba(43,39,34,0.12)] rounded-xl px-4 py-2 text-sm text-ink focus:outline-none focus:border-brand" />
+          <label className="block text-xs font-semibold text-ink-mute mb-1">Videodars</label>
+          <VideoField value={lesson.video_url || ''} onChange={v => onChange('video_url', v)} />
         </div>
         <div>
           <label className="block text-xs font-semibold text-ink-mute mb-1">Konspekt</label>
